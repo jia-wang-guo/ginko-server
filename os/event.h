@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <exception>
 #include <pthread.h>
-#include "../lock/locker.h"
+#include "locker.h"
 
 
 /*这里的T会是http_conn类*/
