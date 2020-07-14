@@ -31,8 +31,6 @@
 #include "../db/sql.h"
 #include "../os/locker.h"
 
-
-
 class Http
 {  
 public:
@@ -79,8 +77,8 @@ public:
     ~Http();
 
 public:
-    void Init(int sockfd, const sockaddr_in &addr, char *, int, int, int, 
-                std::string user, std::string passwd, std::string sqlname);
+    void Init(int sockfd, const sockaddr_in &addr, char *root, 
+        std::string user, std::string passwd, std::string sqlname);
     void CloseConn(bool real_close = true);
 
     void Process();
@@ -88,21 +86,20 @@ public:
     bool Write();
 
     sockaddr_in* GetAddress() { return &Address_;}
-
     void  InitMysqlResult(SqlPool* connPool);
-    void  InitResultFile(SqlPool* connPool);
+
 
 private:
     void      Init();
     HTTP_CODE ProcessRead();
     bool      ProcessWrite(HTTP_CODE ret);
 
-    bool      ParseRequestLine(char* text);
+    HTTP_CODE ParseRequestLine(char* text);
     HTTP_CODE ParseHeader(char* text);
     HTTP_CODE ParseContent(char* text);
     HTTP_CODE DoRequest();
     char*     GetLine();
-    HTTP_CODE ParseLine();
+    LINE_STATUS ParseLine();
 
     void Unmap();
     bool AddResponse(const char* format,...);
@@ -119,10 +116,13 @@ public:
     static int EpollFd_;
     static int UserCount_;
     MYSQL* HttpMysql_;
-    int    State_;
+    //State_ 读为0，写为1
+    int State_; 
+    int TimerFlag_;
+    int Improv_;
 
 private:
-    int Sockfd_;
+    int SockFd_;
     sockaddr_in Address_;
 
     char ReadBuf_[READ_BUFFER_SIZE];
@@ -136,7 +136,7 @@ private:
     CHECK_STATE CheckState_;
     METHOD Method_;
 
-    char RealFile[FILENAME_LEN];
+    char RealFile_[FILENAME_LEN];
     char* Url_;
     char* Version_;
     char* Host_;
@@ -150,7 +150,7 @@ private:
     char* String_;
     int BytesToSend_;
     int BytesHaveSend_;
-    char* DocRoot;
+    char* DocRoot_;
 
     std::map<std::string,std::string> UserMap_;
     char SqlUser_[100];

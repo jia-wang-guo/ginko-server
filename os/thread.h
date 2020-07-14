@@ -25,12 +25,12 @@ private:
     void run();
 
 private:
-    int m_thread_number;        //线程池中的线程数
-    int m_max_requests;         //请求队列中允许的最大请求数
-    pthread_t *m_threads;       //描述线程池的数组，其大小为m_thread_number
-    std::list<http_conn *> m_workqueue; //请求队列，队列的元素会是http_conn
-    locker m_queuelocker;       //保护请求队列的互斥锁,用来保护m_workqueue
-    sem m_queuestat;            //是否有任务需要处理,信号量，初始化的代码在哪里？？？？？
+    int ThreadNumber_;        //线程池中的线程数
+    int MaxRequests_;         //请求队列中允许的最大请求数
+    pthread_t *ThreadsArray_;       //描述线程池的数组，其大小为m_thread_number
+    std::list<http_conn *> RequestQueue_; //请求队列，队列的元素会是http_conn
+    locker Queuelocker_;       //保护请求队列的互斥锁,用来保护m_workqueue
+    sem m_queuestat;            //是否有任务需要处理,信
     bool m_stop;               // 是否结束线程
 };
 

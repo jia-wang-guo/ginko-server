@@ -1,4 +1,4 @@
-#include "event.h"
+#include "thread.h"
 
 
 //谁会调用这个构造函数？？？
