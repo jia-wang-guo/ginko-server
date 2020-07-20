@@ -6,8 +6,8 @@ else
 
 endif
 
-ginko:
-	$(CXX) -o $@ $^ $(CXXFLAGS) 
+ginko: main.cpp  ginko.cpp  ../os/thread.cpp ../os/timer.cpp ../net/http.cpp ../db/sql.cpp -lpthread -lmysqlclient
+	$(CXX) $(CXXFLAGS) $^ -o $@   
 
 clean:
 	rm -r ginko

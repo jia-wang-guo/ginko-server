@@ -109,7 +109,7 @@ SqlRAII::SqlRAII(MYSQL** con,SqlPool* connPool)
     PoolRAII_ = connPool;
 
     #ifdef DEBUG
-        printf("取出一个连接\n");
+        printf("取出一个数据库连接\n");
     #endif
 }
 SqlRAII::~SqlRAII()
@@ -117,6 +117,6 @@ SqlRAII::~SqlRAII()
     PoolRAII_->ReleaseConnection(ConnRAII_);
 
     #ifdef DEBUG
-        printf("销毁一个连接\n");
+        printf("销毁一个数据库连接\n");
     #endif
 }

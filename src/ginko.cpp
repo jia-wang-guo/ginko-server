@@ -35,6 +35,7 @@ void Ginko::init(
     int sql_num, 
     int thread_num)
 {
+    cout << "Ginko::init()" << endl;
     Port_ = port;
     SqlUser_ = user;
     SqlPasswd_ = passwd;
@@ -46,6 +47,7 @@ void Ginko::init(
 
 
 void Ginko::SqlPoolInit(){
+    cout << "Ginko::SqlPoolInit()" << endl;
     ConnPool_ = SqlPool::GetInstance();
     ConnPool_->init("localhost",3306, SqlUser_, SqlPasswd_, SqlName_,SqlNum_);
     HttpUserArray_->InitMysqlResult(ConnPool_);
@@ -53,11 +55,13 @@ void Ginko::SqlPoolInit(){
 
 
 void Ginko::ThreadPoolInit(){
+    cout << "Ginko::ThreadPoolInit()" << endl;
     ThreadPool_ = new ThreadPool(ConnPool_, ThreadNum_);
 }
 
 
 void Ginko::EventListen(){
+    cout << "Ginko::EventListen()" << endl;
     ListenFd_  = socket(PF_INET, SOCK_STREAM, 0);
     assert(ListenFd_ >= 0);
 
@@ -214,8 +218,8 @@ void Ginko::DealWrite(int sockfd){
     }
 }
 
-void Ginko::EventLoop()
-{
+void Ginko::EventLoop(){
+    cout << "Ginko::EventLoop()" << endl;
     bool timeout = false;
     bool stop_server = false;
 
