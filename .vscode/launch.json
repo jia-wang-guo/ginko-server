@@ -9,7 +9,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/./db/test/sql_test",
+            "program": "${workspaceFolder}/src/ginko",
             "args": ["sudo"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

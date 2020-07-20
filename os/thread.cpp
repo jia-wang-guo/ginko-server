@@ -28,6 +28,7 @@ ThreadPool::~ThreadPool(){
 }
 
 bool ThreadPool::append(Http *request){
+    printf("---> ThreadPool::append()\n");
     QueueLocker_.lock();
     if(RequestWorkQueue_.size() >= MaxHttpRequests_){
         QueueLocker_.unlock();
@@ -65,7 +66,8 @@ void ThreadPool::run(){
         QueueLocker_.unlock();
         if(request == nullptr)
             continue;
-        SqlRAII mysqlcon(&request->HttpMysql_, ConnPool_);    
+        SqlRAII mysqlcon(&request->HttpMysql_, ConnPool_);
+        request->Process();    
     }
 }
 

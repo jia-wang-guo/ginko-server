@@ -145,10 +145,66 @@ void Http::Init(){
 }
 
 bool Http::Readonce(){
-    return NO_REQUEST;
+    printf("---> Http::Readonce()\n");
+    if (ReadIndex_ >= READ_BUFFER_SIZE){
+        return false;
+    }
+    int bytes_read = 0;
+    while (true)
+    {
+        bytes_read = recv(SockFd_, ReadBuf_ + ReadIndex_, READ_BUFFER_SIZE - ReadIndex_, 0);
+        if (bytes_read == -1){
+            if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+            return false;
+        } else if (bytes_read == 0){
+            return false;
+        }
+        ReadIndex_ += bytes_read;
+    }
+    printf("ReadBuf_: %s\n",ReadBuf_);
+    return true;
 }
 bool Http::Write(){
-    return NO_REQUEST;
+     printf("---> Http::Write()===========================\n");
+    int temp = 0;
+    // send all
+    if (BytesToSend_ == 0){
+        modfd(EpollFd_, SockFd_, EPOLLIN);
+        Init();
+        return true;
+    }
+    while (1){
+        temp = writev(SockFd_, Iovec_, IovecCount_);
+        if (temp < 0){
+            if (errno == EAGAIN){
+                modfd(EpollFd_, SockFd_, EPOLLOUT);
+                return true;
+            }
+            Unmap();
+            return false;
+        }
+        BytesHaveSend_ += temp;
+        BytesToSend_ -= temp;
+        if (BytesHaveSend_ >= Iovec_[0].iov_len){
+            Iovec_[0].iov_len = 0;
+            Iovec_[1].iov_base = FileAddress_ + (BytesHaveSend_ - WriteIndex_);
+            Iovec_[1].iov_len = BytesToSend_;
+        } else {
+            Iovec_[0].iov_base = WriteBuf_ + BytesHaveSend_;
+            Iovec_[0].iov_len = Iovec_[0].iov_len - BytesHaveSend_;
+        }
+        //数据已经全部发送完
+        if (BytesToSend_ <= 0){
+            Unmap();
+            modfd(EpollFd_, SockFd_, EPOLLIN);
+            if (Linger_){
+                Init();//初始化新的连接，为什么？？？？？
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
 }
 
 /*
@@ -175,10 +231,23 @@ bool Http::Write(){
 *    └───CloseConn()       
 */
 void Http::Process(){
-
+    printf("---> Http::Process()\n");
+    HTTP_CODE read_ret = ProcessRead();
+    if (read_ret == NO_REQUEST){
+        // NO_REQUEST表示请求不完整，还需要继续读客户端的请求，所以注册m_sockfd上的读事件
+        modfd(EpollFd_, SockFd_, EPOLLIN);
+        return;
+    }
+    bool write_ret = ProcessWrite(read_ret);
+    if (!write_ret){
+        CloseConn();
+    }
+    // 解析完http请求之后，需要准备发送http响应报文，注册m_sockfd上的写事件，等内核准备好的时候，让内核去写
+    modfd(EpollFd_, SockFd_, EPOLLOUT);
 }
 
 Http::HTTP_CODE Http::ProcessRead(){
+    printf("---> Http::ProcessRead()\n");
     LINE_STATUS line_status = LINE_OK;
     HTTP_CODE ret = NO_REQUEST;
     char *text = 0;
@@ -229,6 +298,7 @@ Http::HTTP_CODE Http::ProcessRead(){
 // LINE_BAD表示行出错了，可能是空格字符的问题，反正不符合请求行或者头部字段的格式
 // 代码测试见test文件夹，parse_line_test.cpp
 Http::LINE_STATUS Http::ParseLine(){
+    printf("---> Http::ParseLine()\n");
     char temp;
     for (; CheckedIndex_ < ReadIndex_; ++CheckedIndex_)
     {
@@ -261,10 +331,12 @@ Http::LINE_STATUS Http::ParseLine(){
 }
 
 char* Http::GetLine(){
+    printf("---> Http::GetLine()\n");
     return ReadBuf_ + StartLine_;
 }
 
 Http::HTTP_CODE Http::ParseRequestLine(char* text){
+    printf("---> Http::ParseRequestLine()\n");
     // 检索第一个匹配" "或者"\t""
     Url_ = strpbrk(text, " \t");
     if (!Url_)
@@ -272,11 +344,13 @@ Http::HTTP_CODE Http::ParseRequestLine(char* text){
    
     *Url_++ = '\0';
     char *method = text;
-    if (strcasecmp(method, "GET") == 0)
+    if (strcasecmp(method, "GET") == 0){
         Method_ = GET;
-    else if (strcasecmp(method, "POST") == 0)
+        printf("Method GET");
+    } else if (strcasecmp(method, "POST") == 0){
         Method_ = POST;
-    else
+        printf("Method POST");
+    } else
         return BAD_REQUEST;
 
     Url_ += strspn(Url_, " \t");
@@ -308,6 +382,7 @@ Http::HTTP_CODE Http::ParseRequestLine(char* text){
 }
 
 Http::HTTP_CODE Http::ParseHeader(char* text){
+    printf("Http::ParseHeader()\n");
     if (text[0] == '\0'){
         if (ContentLength_ != 0){
             CheckState_ = CHECK_STATE_CONTENT;
@@ -339,6 +414,7 @@ Http::HTTP_CODE Http::ParseHeader(char* text){
 }
 // 只有POST请求会用到
 Http::HTTP_CODE Http::ParseContent(char* text){
+    printf("Http::ParseContent()\n");
     if (ReadIndex_ >= (ContentLength_ + CheckedIndex_)){
         text[ContentLength_] = '\0';
         //POST请求中最后为输入的用户名和密码
@@ -349,6 +425,7 @@ Http::HTTP_CODE Http::ParseContent(char* text){
 }
 
 Http::HTTP_CODE Http::DoRequest(){
+    printf("Http::DoRequest()\n");
     strcpy(RealFile_, DocRoot_);
     int len = strlen(DocRoot_);
     // 找到最后一个的 / 的位置
@@ -464,10 +541,12 @@ Http::HTTP_CODE Http::DoRequest(){
 * response 
 */
 bool Http::ProcessWrite(HTTP_CODE ret){
+    printf("Http::ProcessWrite()==============================\n");
     switch (ret)
     {
     case INTERNAL_ERROR:
     {
+        printf("------->INTERNAL_ERROR\n");
         AddStatusLine(500, error_500_title);
         AddHeaders(strlen(error_500_form));
         if (!AddContent(error_500_form))
@@ -476,6 +555,7 @@ bool Http::ProcessWrite(HTTP_CODE ret){
     }
     case BAD_REQUEST:
     {
+        printf("------->BAD_REQUEST\n");
         AddStatusLine(404, error_404_title);
         AddHeaders(strlen(error_404_form));
         if (!AddContent(error_404_form))
@@ -484,6 +564,7 @@ bool Http::ProcessWrite(HTTP_CODE ret){
     }
     case FORBIDDEN_REQUEST:
     {
+        printf("------->FORBIDDEN_REQUEST\n");
         AddStatusLine(403, error_403_title);
         AddHeaders(strlen(error_403_form));
         if (!AddContent(error_403_form))
@@ -492,6 +573,7 @@ bool Http::ProcessWrite(HTTP_CODE ret){
     }
     case FILE_REQUEST:
     {
+        printf("------->FILE_REQUEST\n");
         AddStatusLine(200, ok_200_title);
         if (FileStat_.st_size != 0)
         {
@@ -500,12 +582,13 @@ bool Http::ProcessWrite(HTTP_CODE ret){
             Iovec_[0].iov_len = WriteIndex_;
             Iovec_[1].iov_base = FileAddress_;
             Iovec_[1].iov_len = FileStat_.st_size;
-            IovecCount = 2;
+            IovecCount_ = 2;
             BytesToSend_ = WriteIndex_ + FileStat_.st_size;
             return true;
         }
         else
         {
+            printf("ok_string\n");
             const char *ok_string = "<html><body></body></html>";
             AddHeaders(strlen(ok_string));
             if (!AddContent(ok_string))
@@ -517,7 +600,7 @@ bool Http::ProcessWrite(HTTP_CODE ret){
     }
     Iovec_[0].iov_base = WriteBuf_;
     Iovec_[0].iov_len = WriteIndex_;
-    IovecCount = 1;
+    IovecCount_ = 1;
     BytesToSend_ = WriteIndex_;
     return true;
 }

@@ -146,7 +146,7 @@ private:
     char* FileAddress_;
     struct stat FileStat_;
     struct iovec Iovec_[2];
-    int IovecCount;
+    int IovecCount_;
     char* String_;
     int BytesToSend_;
     int BytesHaveSend_;
