@@ -8,21 +8,24 @@
 #include <cassert>
 int main()
 {
-    std::ifstream confStream("../etc/ginko.conf");
-    assert(confStream.is_open());
+    // std::ifstream confStream("../etc/ginko.conf");
+    // assert(confStream.is_open());
 
-    string user;
-    confStream >> user;
-    string passwd;
-    confStream >> passwd;
-    string dbname;
-    confStream >> dbname;
-    int port;
-    confStream >> port;
+    // string user;
+    // confStream >> user;
+    // string passwd;
+    // confStream >> passwd;
+    // string dbname;
+    // confStream >> dbname;
+    // int port;
+    // confStream >> port;
 
     //cout << port << endl;
+
+
+
     Ginko ginko;
-    ginko.init(port, user, passwd,dbname,1,8,8);
+    ginko.init(9006, "root", "xc242000", "jiawangdb",1,8,8);
     ginko.SqlPoolInit();
     ginko.ThreadPoolInit();
     ginko.EventListen();

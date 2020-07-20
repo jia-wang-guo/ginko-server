@@ -1,6 +1,6 @@
 DEBUG = 0
 ifeq ($(DEBUG), 1)
-    CXXFLAGS += -g -G
+    CXXFLAGS += -g
 else
     CXXFLAGS += -O2
 

@@ -192,13 +192,16 @@ bool Ginko::DealSignal(bool& timeout, bool& stop_server){
 }
 
 void Ginko::DealRead(int sockfd){
+    printf("Ginko::DealRead()\n");
+
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
     if (HttpUserArray_[sockfd].Readonce()){
         printf("deal with read client(%s),sockfd = %d\n", 
                 inet_ntoa(HttpUserArray_[sockfd].GetAddress()->sin_addr),sockfd);
-        ThreadPool_->append(HttpUserArray_ + sockfd);
-        if (timer)  AdjustTimer(timer);
+        bool ret = ThreadPool_->append(HttpUserArray_ + sockfd);
+        assert(ret == true);
+        if(timer)  AdjustTimer(timer);
     }else{
         DealTimer(timer, sockfd);
     }
@@ -206,6 +209,7 @@ void Ginko::DealRead(int sockfd){
 
 
 void Ginko::DealWrite(int sockfd){
+    printf("Ginko::DealWrite()=======\n");
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
     if (HttpUserArray_[sockfd].Write())
