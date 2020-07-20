@@ -6,32 +6,29 @@
 #include <exception>
 #include <pthread.h>
 #include "locker.h"
+#include "../db/sql.h"
+#include "../net/http.h"
 
-
-/*这里的T会是http_conn类*/
-template<typename T>
-class threadpool
+class ThreadPool
 {
 public:
-    /*thread_number是线程池中线程的数量，max_requests是请求队列中最多允许的、等待处理的请求的数量*/
-    threadpool(int thread_number = 8, int max_request = 10000);
-    ~threadpool();
-    /*往请求队列中添加任务*/ 
-    bool append(T *request);
+    ThreadPool(SqlPool *connPool, int thread_number = 8, 
+                int max_request = 10000);
+    ~ThreadPool();
+    bool append(Http *request);
 
 private:
-    /*工作线程运行的函数，它不断从工作队列中取出任务并执行之*/
-    static void *worker(void *arg); //pthread_create的第三个参数，worker会调用run
+    static void *worker(void *arg);
     void run();
 
 private:
-    int ThreadNumber_;        //线程池中的线程数
-    int MaxRequests_;         //请求队列中允许的最大请求数
-    pthread_t *ThreadsArray_;       //描述线程池的数组，其大小为m_thread_number
-    std::list<http_conn *> RequestQueue_; //请求队列，队列的元素会是http_conn
-    locker Queuelocker_;       //保护请求队列的互斥锁,用来保护m_workqueue
-    sem m_queuestat;            //是否有任务需要处理,信
-    bool m_stop;               // 是否结束线程
+    int ThreadNumber_;        
+    int MaxHttpRequests_;         
+    pthread_t *ThreadsArray_;       
+    std::list<Http *> RequestWorkQueue_; 
+    locker QueueLocker_;       
+    sem Queuestat_;            
+    SqlPool *ConnPool_;      
 };
 
 
