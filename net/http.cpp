@@ -376,7 +376,7 @@ Http::HTTP_CODE Http::ParseRequestLine(char* text){
     //当url为/时，显示判断界面
     if (strlen(Url_) == 1)
         // Url 变成了/judge.html
-        strcat(Url_, "judge.html");
+        strcat(Url_, "index.html");
     CheckState_ = CHECK_STATE_HEADER;
     return NO_REQUEST;
 }
@@ -471,45 +471,45 @@ Http::HTTP_CODE Http::DoRequest(){
                 Lock.unlock();
 
                 if (!res)
-                    strcpy(Url_, "/log.html");
+                    strcpy(Url_, "/index.html");
                 else
-                    strcpy(Url_, "/registerError.html");
+                    strcpy(Url_, "/index.html");
             }
             else
-                strcpy(Url_, "/registerError.html");
+                strcpy(Url_, "/index.html");
         }else if(*(p + 1) == '2'){
             //这时候只需要对哈希表进行判断，不需要再对数据库进行查询
             if (Users.find(name) != Users.end() && Users[name] == password)
-                strcpy(Url_, "/welcome.html");//图片，视频
+                strcpy(Url_, "/index.html");//图片，视频
             else
-                strcpy(Url_, "/logError.html");//登录错误界面    
+                strcpy(Url_, "/index.html");//登录错误界面    
         }
     }
 
     if (*(p + 1) == '0'){
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/register.html");
+        strcpy(m_url_real, "/index.html");
         strncpy(RealFile_ + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
     }
     else if (*(p + 1) == '1'){
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/log.html");
+        strcpy(m_url_real, "/index.html");
         strncpy(RealFile_ + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
     }
     else if (*(p + 1) == '5'){
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/picture.html");
+        strcpy(m_url_real, "/index.html");
         strncpy(RealFile_ + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
     }
     else if (*(p + 1) == '6'){
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/video.html");
+        strcpy(m_url_real, "/index.html");
         strncpy(RealFile_ + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
