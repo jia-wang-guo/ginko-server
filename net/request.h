@@ -1,8 +1,13 @@
 #ifndef __REQUEST_H__
 #define __REQUEST_H__
 
-class HttpRequest
-{
+#include <cstring>
+#include <string>
+#include <regex>
+
+using namespace std;
+
+class Request{
 public:
     enum METHOD 
     {
@@ -16,21 +21,13 @@ public:
         CONNECT,
         PATH
     };
-    // master state machine status
     enum CHECK_STATE
     {
-        CHECK_STATE_REQUESTLINE = 0,
-        CHECK_STATE_HEADER,
-        CHECK_STATE_CONTENT
+        REQUESTLINE = 0,
+        HEADER,
+        CONTENT,
+        FINISH
     };
-    // slave state machine status
-    enum LINE_STATUS
-    {
-        LINE_OK = 0,
-        LINE_BAD,
-        LINE_OPEN
-    };
-
     enum HTTP_CODE
     {
         NO_REQUEST,
@@ -42,19 +39,25 @@ public:
         INTERNAL_ERROR,
         CLOSED_CONNECTION
     };
+    enum LINE_STATUS
+    {
+        LINE_OK = 0,
+        LINE_BAD,
+        LINE_OPEN
+    };
 
 public:
-    HttpRequest();
-    ~HttpRequest();
+    void Init(const char* buf);
+    LINE_STATUS ParseLine();
+    HTTP_CODE ParseRequestLine(std::string &line);
+    HTTP_CODE ParseHeader(char* text);
+    HTTP_CODE ParseContent(char* text);
+    HTTP_CODE DoRequest();
+    char*     GetLine();
 
 public:
-    bool ParseRequestLine_(char* text);
-    HTTP_CODE ParseHeader_(char* text);
-    HTTP_CODE ParseContent_(char* text);
+    char* ReadBuf;
 
-    char* GetLine_();
-    HTTP_CODE ParseLine();
 };
-
 
 #endif

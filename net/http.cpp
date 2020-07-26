@@ -135,6 +135,7 @@ void Http::Init(){
     Version_       = 0;
     ContentLength_ = 0;
     Host_         = 0;
+    // 在缓冲区中的位置
     StartLine_    = 0;
     CheckedIndex_ = 0;
     ReadIndex_    = 0;
@@ -255,12 +256,12 @@ Http::HTTP_CODE Http::ProcessRead(){
     {
         text = GetLine();
         StartLine_ = CheckedIndex_;
-        printf("%s\n", text);
+        std::string line(text,CheckedIndex_);
         switch (CheckState_)
         {
         case CHECK_STATE_REQUESTLINE:
         {
-            ret = ParseRequestLine(text);
+            ret = ParseRequestLine(line);
             if (ret == BAD_REQUEST)
                 return BAD_REQUEST;
             break;
@@ -335,50 +336,34 @@ char* Http::GetLine(){
     return ReadBuf_ + StartLine_;
 }
 
-Http::HTTP_CODE Http::ParseRequestLine(char* text){
+Http::HTTP_CODE Http::ParseRequestLine(std::string &line){
     printf("---> Http::ParseRequestLine()\n");
-    // 检索第一个匹配" "或者"\t""
-    Url_ = strpbrk(text, " \t");
-    if (!Url_)
-        return BAD_REQUEST;
-   
-    *Url_++ = '\0';
-    char *method = text;
-    if (strcasecmp(method, "GET") == 0){
-        Method_ = GET;
-        printf("Method GET");
-    } else if (strcasecmp(method, "POST") == 0){
-        Method_ = POST;
-        printf("Method POST");
-    } else
-        return BAD_REQUEST;
+    regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
+    smatch subMatch;
+    string method, path, version;
+    if(regex_match(line, subMatch, patten)) {   
+        method = subMatch[1];
+        path = subMatch[2];
+        version = subMatch[3];
+        cout << method <<"\t"<< path << "\t" << version <<endl;
+        if(method == "GET")
+            Method_ = GET;
+        else if(method == "POST")
+            Method_ = POST;
+        else
+            return BAD_REQUEST;
+        // 这个地方后面需要优化一下
+        Url_ = (char*)malloc(1024);
+        memset(Url_,'\0',1024);
+        strcpy(Url_, path.c_str());
 
-    Url_ += strspn(Url_, " \t");
-    Version_ = strpbrk(Url_, " \t");
-    if (!Version_)
-        return BAD_REQUEST;
-    *Version_++ = '\0';
-    Version_ += strspn(Version_, " \t");
-    if (strcasecmp(Version_, "HTTP/1.1") != 0)
-        return BAD_REQUEST;
-
-    if (strncasecmp(Url_, "http://", 7) == 0){
-        Url_ += 7;
-        Url_ = strchr(Url_, '/');
+        if (path == "/"){    
+            strcpy(Url_, "/index.html");
+        }
+        CheckState_ = CHECK_STATE_HEADER;
+        return NO_REQUEST;
     }
-    if (strncasecmp(Url_, "https://", 8) == 0){
-        Url_ += 8;
-        Url_ = strchr(Url_, '/');
-    }
-
-    if (!Url_ || Url_[0] != '/')
-        return BAD_REQUEST;
-    //当url为/时，显示判断界面
-    if (strlen(Url_) == 1)
-        // Url 变成了/judge.html
-        strcat(Url_, "index.html");
-    CheckState_ = CHECK_STATE_HEADER;
-    return NO_REQUEST;
+    return BAD_REQUEST;
 }
 
 Http::HTTP_CODE Http::ParseHeader(char* text){

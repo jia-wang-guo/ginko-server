@@ -26,10 +26,13 @@
 #include <cstring>
 #include <string>
 #include <fstream>
+#include <regex>
 #include <map>
 // user
 #include "../db/sql.h"
 #include "../os/locker.h"
+
+using namespace std;
 
 class Http
 {  
@@ -94,7 +97,7 @@ private:
     HTTP_CODE ProcessRead();
     bool      ProcessWrite(HTTP_CODE ret);
 
-    HTTP_CODE ParseRequestLine(char* text);
+    HTTP_CODE ParseRequestLine(std::string &line);
     HTTP_CODE ParseHeader(char* text);
     HTTP_CODE ParseContent(char* text);
     HTTP_CODE DoRequest();
@@ -126,22 +129,22 @@ private:
     sockaddr_in Address_;
 
     char ReadBuf_[READ_BUFFER_SIZE];
-    int ReadIndex_;
-    int CheckedIndex_;
-    int StartLine_;
+    int ReadIndex_;  // request
+    int CheckedIndex_;  // request
+    int StartLine_;   // request
 
-    char WriteBuf_[WRITE_BUFFER_SIZE];
-    int WriteIndex_;
+    char WriteBuf_[WRITE_BUFFER_SIZE];//response
+    int WriteIndex_; //response
 
-    CHECK_STATE CheckState_;
-    METHOD Method_;
+    CHECK_STATE CheckState_; //request
+    METHOD Method_;    // request
 
-    char RealFile_[FILENAME_LEN];
-    char* Url_;
-    char* Version_;
-    char* Host_;
-    int ContentLength_;
-    bool Linger_;
+    char RealFile_[FILENAME_LEN]; //request
+    char* Url_;//request
+    char* Version_;//request
+    char* Host_;//request
+    int ContentLength_;//request
+    bool Linger_;//request
     // for writev
     char* FileAddress_;
     struct stat FileStat_;
