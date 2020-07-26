@@ -85,11 +85,11 @@ public:
     void CloseConn(bool real_close = true);
 
     void Process();
-    bool Readonce();
+    bool Read();
     bool Write();
 
     sockaddr_in* GetAddress() { return &Address_;}
-    void  InitMysqlResult(SqlPool* connPool);
+    void  CreateSqlCache(SqlPool* connPool);
 
 
 private:

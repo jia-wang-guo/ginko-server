@@ -1,6 +1,7 @@
 #include "request.h"
 
-Request::LINE_STATUS Request::ParseLine(){
+
+LINE_STATUS Request::ParseLine(){
     printf("---> Request::ParseLine()\n");
     char temp;
     for (; CheckedIndex_ < ReadIndex_; ++CheckedIndex_)
@@ -38,7 +39,7 @@ char* Request::GetLine(){
     return ReadBuf + StartLine_;
 }
 
-Request::Request_CODE Request::ParseRequestLine(std::string &line){
+HTTP_CODE Request::ParseRequestLine(std::string &line){
     printf("---> Request::ParseRequestLine()\n");
     regex patten("^([^ ]*) ([^ ]*) Request/([^ ]*)$");
     smatch subMatch;
@@ -62,17 +63,17 @@ Request::Request_CODE Request::ParseRequestLine(std::string &line){
         if (path == "/"){    
             strcpy(Url_, "/index.html");
         }
-        CheckState_ = CHECK_STATE_HEADER;
+        CheckState_ = HEADER;
         return NO_REQUEST;
     }
     return BAD_REQUEST;
 }
 
-Request::Request_CODE Request::ParseHeader(char* text){
+HTTP_CODE Request::ParseHeader(char* text){
     printf("Request::ParseHeader()\n");
     if (text[0] == '\0'){
         if (ContentLength_ != 0){
-            CheckState_ = CHECK_STATE_CONTENT;
+            CheckState_ = CONTENT;
             return NO_REQUEST;
         }
         return GET_REQUEST;
@@ -100,7 +101,7 @@ Request::Request_CODE Request::ParseHeader(char* text){
     return NO_REQUEST;
 }
 // 只有POST请求会用到
-Request::Request_CODE Request::ParseContent(char* text){
+HTTP_CODE Request::ParseContent(char* text){
     printf("Request::ParseContent()\n");
     if (ReadIndex_ >= (ContentLength_ + CheckedIndex_)){
         text[ContentLength_] = '\0';
@@ -109,4 +110,54 @@ Request::Request_CODE Request::ParseContent(char* text){
         return GET_REQUEST;
     }
     return NO_REQUEST;
+}
+
+HTTP_CODE Request::ProcessRead_(){
+    printf("---> Request::ProcessRead()\n");
+    LINE_STATUS line_status = LINE_OK;
+    HTTP_CODE ret = NO_REQUEST;
+    char *text = 0;
+    while (
+            (CheckState_ == CONTENT && 
+            line_status == LINE_OK) || 
+            ((line_status = ParseLine()) == LINE_OK)
+        )
+    {
+        text = GetLine();
+        StartLine_ = CheckedIndex_;
+        std::string line(text,CheckedIndex_);
+        switch (CheckState_)
+        {
+        case REQUESTLINE:
+        {
+            ret = ParseRequestLine(line);
+            if (ret == BAD_REQUEST)
+                return BAD_REQUEST;
+            break;
+        }
+        case HEADER:
+        {
+            ret = ParseHeader(text);
+            if (ret == BAD_REQUEST)
+                return BAD_REQUEST;
+            else if (ret == GET_REQUEST)
+            {
+                return DoRequest();
+            }
+            break;
+        }
+        case CONTENT:
+        {
+            ret = ParseContent(text);
+            if (ret == GET_REQUEST)
+                return DoRequest();
+            line_status = LINE_OPEN;
+            break;
+        }
+        default:
+            return INTERNAL_ERROR;
+        }
+    }
+    return NO_REQUEST;
+
 }

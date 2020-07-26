@@ -1,51 +1,16 @@
 #ifndef __REQUEST_H__
 #define __REQUEST_H__
 
+#include <iostream>
 #include <cstring>
 #include <string>
 #include <regex>
 
+#include "common.h"
+
 using namespace std;
 
 class Request{
-public:
-    enum METHOD 
-    {
-        GET = 0,
-        POST,
-        HEAD,
-        PUT,
-        DELETE,
-        TRACE,
-        OPTIONS,
-        CONNECT,
-        PATH
-    };
-    enum CHECK_STATE
-    {
-        REQUESTLINE = 0,
-        HEADER,
-        CONTENT,
-        FINISH
-    };
-    enum HTTP_CODE
-    {
-        NO_REQUEST,
-        GET_REQUEST,
-        BAD_REQUEST,
-        NO_RESOURCE,
-        FORBIDDEN_REQUEST,
-        FILE_REQUEST,
-        INTERNAL_ERROR,
-        CLOSED_CONNECTION
-    };
-    enum LINE_STATUS
-    {
-        LINE_OK = 0,
-        LINE_BAD,
-        LINE_OPEN
-    };
-
 public:
     void Init(const char* buf);
     LINE_STATUS ParseLine();
@@ -55,8 +20,31 @@ public:
     HTTP_CODE DoRequest();
     char*     GetLine();
 
+    HTTP_CODE ProcessRead_();
+
+
+
 public:
     char* ReadBuf;
+
+
+
+public:
+    int ReadIndex_;  
+    int CheckedIndex_;  
+    int StartLine_;
+
+    CHECK_STATE CheckState_; 
+    METHOD Method_;   
+
+    char* RealFile_; 
+    char* Url_;
+    char* Version_;
+    char* Host_;
+    int ContentLength_;
+    bool Linger_;
+    // POST请求的body
+    char* String_;
 
 };
 

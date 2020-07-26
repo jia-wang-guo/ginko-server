@@ -50,7 +50,7 @@ void Ginko::SqlPoolInit(){
     cout << "Ginko::SqlPoolInit()" << endl;
     ConnPool_ = SqlPool::GetInstance();
     ConnPool_->init("localhost",3306, SqlUser_, SqlPasswd_, SqlName_,SqlNum_);
-    HttpUserArray_->InitMysqlResult(ConnPool_);
+    HttpUserArray_->CreateSqlCache(ConnPool_);
 }
 
 
@@ -196,7 +196,7 @@ void Ginko::DealRead(int sockfd){
 
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
-    if (HttpUserArray_[sockfd].Readonce()){
+    if (HttpUserArray_[sockfd].Read()){
         printf("deal with read client(%s),sockfd = %d\n", 
                 inet_ntoa(HttpUserArray_[sockfd].GetAddress()->sin_addr),sockfd);
         bool ret = ThreadPool_->append(HttpUserArray_ + sockfd);

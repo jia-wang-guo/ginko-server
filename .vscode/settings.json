@@ -68,6 +68,7 @@
         "bitset": "cpp",
         "unordered_set": "cpp",
         "regex": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "set": "cpp"
     }
 }

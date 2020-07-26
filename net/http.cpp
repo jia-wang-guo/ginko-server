@@ -105,7 +105,7 @@ void Http::CloseConn(bool real_close){
 
 // 数据库相关,User在文件最前面定义
 // std::map<std::string,std::string> Users;
-void  Http::InitMysqlResult(SqlPool* connPool){
+void  Http::CreateSqlCache(SqlPool* connPool){
     MYSQL* mysql = nullptr;
     SqlRAII mysqlconn(&mysql,connPool);
     if (mysql_query(mysql, "SELECT username,passwd FROM user"))
@@ -145,7 +145,7 @@ void Http::Init(){
     Improv_       = 0;
 }
 
-bool Http::Readonce(){
+bool Http::Read(){
     printf("---> Http::Readonce()\n");
     if (ReadIndex_ >= READ_BUFFER_SIZE){
         return false;
