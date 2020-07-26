@@ -264,6 +264,12 @@ int Request::FinishParse_(){
     if (S_ISDIR(FileStat.st_mode))
         return 400;      
 
+
+
+
+
+
+
     int fd = open(RealFile_, O_RDONLY);
     FileAddress = (char *)mmap(0, FileStat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     printf("m_file_address:%s\n",FileAddress);//打印m_file_address
