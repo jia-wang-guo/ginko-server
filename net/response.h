@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstring>
-
+#include <string>
 #include "common.h"
 
 class Response{
@@ -23,7 +23,7 @@ public:
     bool AddBlankLine();
     void Init();
 
-    bool ProcessWrite_(HTTP_CODE ret);
+    bool ProcessWrite_(int response);
 
 
 private:
