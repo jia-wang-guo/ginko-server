@@ -21,10 +21,15 @@ public:
     static int UserCount;
     MYSQL* HttpMysql;
 
-    //State 读为0，写为1
-    int State; 
-    int TimerFlag;
-    int Improv;
+public:
+    HttpConn(){
+        Request_ = new Request;
+        Response_ = new Response;
+    }
+    ~HttpConn(){
+        delete Request_;
+        delete Response_;
+    }
 
 public:
 
@@ -39,25 +44,19 @@ public:
 
 
 private:
-    void      Init_();
+    void Init_();
 
 private:
     int SockFd_;
     struct sockaddr_in Address_;
-    char ReadBuf_[READ_BUFFER_SIZE];
-    char WriteBuf_[WRITE_BUFFER_SIZE];
-
-    int ReadIndex_;
-
     char* DocRoot_;
     char SqlUser_[100];
     char SqlPasswd_[100];
     char SqlName_[100];
 
     bool Linger_;
-    Request Request_;
-    Response Response_;
-
+    Request* Request_;
+    Response* Response_;
 };
 
 

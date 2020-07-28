@@ -1,7 +1,5 @@
 #include "response.h"
 
-
-
 // 状态码和状态原语
 // 2XX
 const char *ok_200_title = "OK";
@@ -28,10 +26,10 @@ const char *error_500_form = "There was an unusual problem serving the request f
 const char *error_503_title = "Service Unavaliable";
 const char *error_503_form = "There was an unusual problem serving the request file.\n";
 
+#define WRITE_BUFFER_SIZE 2048
 
 
-
-void Response::Init(){
+void Response::ResponseInit(){
 
 }
 
@@ -43,7 +41,7 @@ void Response::Unmap(){
     }
 
 }
-bool Response::AddResponse(const char* format,...){
+bool Response::AddResponse_(const char* format,...){
     if (WriteIndex_ >= WRITE_BUFFER_SIZE)
         return false;
     va_list arg_list;
@@ -61,63 +59,64 @@ bool Response::AddResponse(const char* format,...){
     return true;
 }
 
-bool Response::AddStatusLine(int status, const char* title){
-    return AddResponse("%s %d %s\r\n", "Response/1.1", status, title);
+bool Response::AddStatusLine_(int status, const char* title){
+    return AddResponse_("%s %d %s\r\n", "Response/1.1", status, title);
 }
 // AddHeaders()
 //     └───AddContentLength()
 //     └───AddLinger()
 //     └───AddBlankLine()
-bool Response::AddHeaders(int content_length){
-    return AddContentLength(content_length)
-           && AddLinger()
-           && AddBlankLine();
+bool Response::AddHeaders_(int content_length){
+    return AddContentLength_(content_length)
+           && AddLinger_()
+           && AddBlankLine_();
 }
-bool Response::AddContentLength(int content_length){
-    return AddResponse("Content-Length:%d\r\n", content_length);
+bool Response::AddContentLength_(int content_length){
+    return AddResponse_("Content-Length:%d\r\n", content_length);
 }
-bool Response::AddLinger(){
-    return AddResponse("Connection:%s\r\n", 
+
+bool Response::AddLinger_(){
+    return AddResponse_("Connection:%s\r\n", 
             (Linger_ == true) ? "keep-alive" : "close");
 }
-bool Response::AddBlankLine(){
-    return AddResponse("%s", "\r\n");
+bool Response::AddBlankLine_(){
+    return AddResponse_("%s", "\r\n");
 }
 
 
-bool Response::AddContentType(){
-    return AddResponse("Content-Type:%s\r\n", "text/html");
+bool Response::AddContentType_(){
+    return AddResponse_("Content-Type:%s\r\n", "text/html");
 }
 
-bool Response::AddContent(const char* content){
-    return AddResponse("%s", content);
+bool Response::AddContent_(const char* content){
+    return AddResponse_("%s", content);
 }
 
-bool Response::ProcessWrite_(int response){
-    printf("Response::ProcessWrite_()\n");
+bool Response::ProcessResponse(int response){
+    printf("Response::ProcessWrite()\n");
     if (response == 500){
         printf("------->INTERNAL_ERROR\n");
-        AddStatusLine(500, error_500_title);
-        AddHeaders(strlen(error_500_form));
-        if (!AddContent(error_500_form))
+        AddStatusLine_(500, error_500_title);
+        AddHeaders_(strlen(error_500_form));
+        if (!AddContent_(error_500_form))
             return false;
     }else if(response == 400) {
         printf("------->BAD_REQUEST\n");
-        AddStatusLine(404, error_404_title);
-        AddHeaders(strlen(error_404_form));
-        if (!AddContent(error_404_form))
+        AddStatusLine_(404, error_404_title);
+        AddHeaders_(strlen(error_404_form));
+        if (!AddContent_(error_404_form))
             return false;
     }else if(response == 403) {
         printf("------->FORBIDDEN_REQUEST\n");
-        AddStatusLine(403, error_403_title);
-        AddHeaders(strlen(error_403_form));
-        if (!AddContent(error_403_form))
+        AddStatusLine_(403, error_403_title);
+        AddHeaders_(strlen(error_403_form));
+        if (!AddContent_(error_403_form))
             return false;
-    }else if(response == 200) {
+    }else if(response == 408) {
         printf("------->FILE_REQUEST\n");
-        AddStatusLine(200, ok_200_title);
+        AddStatusLine_(200, ok_200_title);
         if (FileStat_.st_size != 0){
-            AddHeaders(FileStat_.st_size);
+            AddHeaders_(FileStat_.st_size);
             Iovec_[0].iov_base = WriteBuf_;
             Iovec_[0].iov_len = WriteIndex_;
             Iovec_[1].iov_base = FileAddress_;
@@ -128,8 +127,8 @@ bool Response::ProcessWrite_(int response){
         } else {
             printf("ok_string\n");
             const char *ok_string = "<html><body></body></html>";
-            AddHeaders(strlen(ok_string));
-            if (!AddContent(ok_string))
+            AddHeaders_(strlen(ok_string));
+            if (!AddContent_(ok_string))
                 return false;
         }
     } else {

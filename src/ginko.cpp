@@ -1,8 +1,8 @@
 #include "ginko.h"
 
 Ginko::Ginko(){
-    HttpUserArray_ = new Http[MAX_FD];
-
+    HttpUserArray_ = new HttpConn[MAX_FD];
+  
     // root dir
     char serverPath[200];
     getcwd(serverPath, 200);
@@ -95,7 +95,7 @@ void Ginko::EventListen(){
     EpollFd_ = epoll_create(5);
     assert(EpollFd_ != -1);
     Utils_.addfd(EpollFd_, ListenFd_, false);
-    Http::EpollFd_ = EpollFd_;
+    HttpConn::EpollFd = EpollFd_;
 
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, Pipefd_);
     assert(ret != -1);
@@ -150,7 +150,7 @@ bool Ginko::DealClientData(){
             printf("errno is:%d accept error", errno);
             break;
         }
-        if (Http::UserCount_ >= MAX_FD){
+        if (HttpConn::UserCount >= MAX_FD){
             Utils_.show_error(connfd, "Internal server busy");
             printf("Internal server busy");
             break;

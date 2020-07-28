@@ -27,7 +27,7 @@ ThreadPool::~ThreadPool(){
     delete[] ThreadsArray_;
 }
 
-bool ThreadPool::append(Http *request){
+bool ThreadPool::append(HttpConn *request){
     printf("---> ThreadPool::append()\n");
     QueueLocker_.lock();
     if(RequestWorkQueue_.size() >= MaxHttpRequests_){
@@ -61,12 +61,12 @@ void ThreadPool::run(){
             continue;
         }
         // 线程每次从http请求队列队头取请求
-        Http* request = RequestWorkQueue_.front();
+        HttpConn* request = RequestWorkQueue_.front();
         RequestWorkQueue_.pop_front();
         QueueLocker_.unlock();
         if(request == nullptr)
             continue;
-        SqlRAII mysqlcon(&request->HttpMysql_, ConnPool_);
+        SqlRAII mysqlcon(&request->HttpMysql, ConnPool_);
         request->Process();    
     }
 }

@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "../net/http.h"
+#include "../net/httpconn.h"
 #include "../os/thread.h"
 #include "../os/timer.h"
 
@@ -49,7 +49,7 @@ public:
     char* Root_;
     
     int Pipefd_[2];
-    Http* HttpUserArray_;
+    HttpConn* HttpUserArray_;
 
     // db
     SqlPool* ConnPool_;

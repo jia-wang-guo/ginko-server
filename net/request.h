@@ -52,7 +52,7 @@ public:
 
 public:
     void        Init(const char* buf);
-    int         ProcessRead();
+    int         ProcessRequest();
 private:
     LINE_STATUS ReadLine_();
     char*       GetLine_();
@@ -64,13 +64,13 @@ private:
 
 public:
     // 要从httpconn传进来 
-    char* ReadBuf;
-    unordered_map<string,string>* SqlUser;
+    unordered_map<string,string>* Users;
     MYSQL* HttpRequestMysql;
     struct stat FileStat;
     char* FileAddress;
-private:
-    int ReadIndex_;  
+    char ReadBuf[2048];
+    int ReadIndex;
+private:  
     int CheckedIndex_;  
     int StartLine_;
 

@@ -8,25 +8,24 @@
 #include <cstdarg>
 #include <cstring>
 #include <string>
-#include "common.h"
+
 
 class Response{
 public:
+    bool ProcessResponse(int response);
+    void ResponseInit();
     void Unmap();
-    bool AddResponse(const char* format,...);
-    bool AddContent(const char* content);
-    bool AddStatusLine(int status, const char* title);
-    bool AddHeaders(int content_length);
-    bool AddContentType();
-    bool AddContentLength(int content_length);
-    bool AddLinger();
-    bool AddBlankLine();
-    void Init();
-
-    bool ProcessWrite_(int response);
-
-
 private:
+
+    bool AddResponse_(const char* format,...);
+    bool AddContent_(const char* content);
+    bool AddStatusLine_(int status, const char* title);
+    bool AddHeaders_(int content_length);
+    bool AddContentType_();
+    bool AddContentLength_(int content_length);
+    bool AddLinger_();
+    bool AddBlankLine_();
+
 
 
 public:

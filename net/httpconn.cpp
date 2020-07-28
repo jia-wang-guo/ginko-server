@@ -8,7 +8,6 @@ std::map<std::string,std::string> Users;
 int HttpConn::UserCount = 0;
 int HttpConn::EpollFd = -1;
 
-
 /* 
 * global functions
 */
@@ -62,67 +61,70 @@ void HttpConn::Init(
     strcpy(SqlUser_, user.c_str());
     strcpy(SqlPasswd_, passwd.c_str());
     strcpy(SqlName_, sqlname.c_str());
+    Request_ = new Request;
+    Response_ = new Response;
 }
-void  HttpConn::Init_(){
-    Request_.Init(NULL);
-    Response_.Init();
+ // 待定义
+ void HttpConn::Init_(){
 
-}
+ }
+
 
 // 主线程调用Read()和Write()用来处理IO
 // 工作线程调用Process()用来处理业务逻辑
 bool HttpConn::Read(){
-    printf("---> Http::Readonce()\n");
-    if (ReadIndex_ >= READ_BUFFER_SIZE){
+    printf("--->HttpConn::Read()\n");
+    if (Request_->ReadIndex >= 2048){
         return false;
     }
     int bytes_read = 0;
     while (true){
-        bytes_read = recv(SockFd_, ReadBuf_ + ReadIndex_, READ_BUFFER_SIZE - ReadIndex_, 0);
+        bytes_read = recv(SockFd_, Request_->ReadBuf + Request_->ReadIndex, 
+                             2048 - Request_->ReadIndex, 0);
         if (bytes_read == -1){
             if (errno == EAGAIN || errno == EWOULDBLOCK) break;
             return false;
         } else if (bytes_read == 0){
             return false;
         }
-        ReadIndex_ += bytes_read;
+        Request_->ReadIndex += bytes_read;
     }
-    printf("ReadBuf_: %s\n",ReadBuf_);
+    cout << "bytes_read = " << bytes_read << " ReadBuf = " <<  Request_->ReadBuf << endl;
     return true;
 }
 
 bool HttpConn::Write(){
-    printf("---> Http::Write()===========================\n");
+    printf("---> Http::Write()\n");
     int temp = 0;
     // send all
-    if (Response_.BytesToSend_ == 0){
+    if (Response_->BytesToSend_ == 0){
         modfd(EpollFd, SockFd_, EPOLLIN);
-        Init_();
+        Init_();//初始化缓冲区相关的变量
         return true;
     }
     while (1){
-        temp = writev(SockFd_, Response_.Iovec_, Response_.IovecCount_);
+        temp = writev(SockFd_, Response_->Iovec_, Response_->IovecCount_);
         if (temp < 0){
             if (errno == EAGAIN){
                 modfd(EpollFd, SockFd_, EPOLLOUT);
                 return true;
             }
-            Response_.Unmap();
+            Response_->Unmap();
             return false;
         }
-        Response_.BytesHaveSend_ += temp;
-        Response_.BytesToSend_ -= temp;
-        if (Response_.BytesHaveSend_ >= Response_.Iovec_[0].iov_len){
-            Response_.Iovec_[0].iov_len = 0;
-            Response_.Iovec_[1].iov_base = Response_.FileAddress_ + (Response_.BytesHaveSend_ - Response_.WriteIndex_);
-            Response_.Iovec_[1].iov_len = Response_.BytesToSend_;
+        Response_->BytesHaveSend_ += temp;
+        Response_->BytesToSend_ -= temp;
+        if (Response_->BytesHaveSend_ >= Response_->Iovec_[0].iov_len){
+            Response_->Iovec_[0].iov_len = 0;
+            Response_->Iovec_[1].iov_base = Response_->FileAddress_ + (Response_->BytesHaveSend_ - Response_->WriteIndex_);
+            Response_->Iovec_[1].iov_len = Response_->BytesToSend_;
         } else {
-            Response_.Iovec_[0].iov_base = WriteBuf_ + Response_.BytesHaveSend_;
-            Response_.Iovec_[0].iov_len = Response_.Iovec_[0].iov_len - Response_.BytesHaveSend_;
+            Response_->Iovec_[0].iov_base = Response_->WriteBuf_ + Response_->BytesHaveSend_;
+            Response_->Iovec_[0].iov_len = Response_->Iovec_[0].iov_len - Response_->BytesHaveSend_;
         }
-        //数据已经全部发送完
-        if (Response_.BytesToSend_ <= 0){
-            Response_.Unmap();
+        //？？？为什么和这个函数最前面重复了呢
+        if (Response_->BytesToSend_ <= 0){
+            Response_->Unmap();
             modfd(EpollFd, SockFd_, EPOLLIN);
             if (Linger_){
                 Init_();//初始化新的连接，为什么？？？？？
@@ -136,19 +138,19 @@ bool HttpConn::Write(){
 
 void HttpConn::Process(){
     printf("---> Http::Process()\n");
-    HTTP_CODE read_ret = Request_.ProcessRead_();
-    if (read_ret == NO_REQUEST){
+    int read_ret = Request_->ProcessRequest();
+    if (read_ret == 100){
         modfd(EpollFd, SockFd_, EPOLLIN);
         return;
     }
-    bool write_ret = Response_.ProcessWrite_(read_ret);
+    bool write_ret = Response_->ProcessResponse(read_ret);
     if (!write_ret){
         CloseConn();
     }
     modfd(EpollFd, SockFd_, EPOLLOUT);    
 }
 
-void HttpConn::CloseConn(bool real_close = true){
+void HttpConn::CloseConn(bool real_close){
     if(real_close && (SockFd_ != -1)){
         printf("close fd %d\n", SockFd_);
         removefd(EpollFd, SockFd_);
