@@ -20,9 +20,11 @@ public:
     static int EpollFd;
     static int UserCount;
     MYSQL* HttpMysql;
+    int m_close_log;
 
 public:
     HttpConn(){
+        m_close_log = 0;
         Request_ = new Request;
         Response_ = new Response;
     }

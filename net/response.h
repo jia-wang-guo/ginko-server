@@ -8,7 +8,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <string>
-
+#include "../log/log.h"
 
 class Response{
 public:
@@ -42,6 +42,9 @@ public:
     int WriteIndex_; 
 
     bool Linger_;
+
+    int m_close_log;
+
     
 };
 

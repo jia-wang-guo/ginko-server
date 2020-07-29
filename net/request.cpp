@@ -159,7 +159,6 @@ int Request::ProcessRequest(){
 
 
 int Request::FinishParse_(){
-    printf("Http::DoRequest()\n");
     strcpy(RealFile_, DocRoot_);
     int len = strlen(DocRoot_);
     // 找到最后一个的 / 的位置

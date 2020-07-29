@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <mysql/mysql.h>
 #include "../os/locker.h"
+#include "../log/log.h"
 
 using namespace std;
 
@@ -70,6 +71,7 @@ public:
     char* FileAddress;
     char ReadBuf[2048];
     int ReadIndex;
+    int m_close_log;
 private:  
     int CheckedIndex_;  
     int StartLine_;

@@ -48,6 +48,7 @@ public:
     string User_;
     string Passwd_;
     string DBName_;
+    int m_close_log;
 };
 
 

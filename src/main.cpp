@@ -1,5 +1,4 @@
 #include "../db/sql.h"
-#include "../net/http.h"
 #include "../os/timer.h"
 #include "../os/locker.h"
 #include "../os/thread.h"

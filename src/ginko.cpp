@@ -47,7 +47,7 @@ void Ginko::init(
 
 
 void Ginko::SqlPoolInit(){
-    cout << "Ginko::SqlPoolInit()" << endl;
+     cout << "Ginko::SqlPoolInit()" << endl;
     ConnPool_ = SqlPool::GetInstance();
     ConnPool_->init("localhost",3306, SqlUser_, SqlPasswd_, SqlName_,SqlNum_);
     HttpUserArray_->CreateSqlCache(ConnPool_);
@@ -129,7 +129,7 @@ void Ginko::AdjustTimer(util_timer *timer){
     time_t cur = time(NULL);
     timer->expire = cur + 3 * TIMESLOT;
     TimerList_.adjust_timer(timer);
-    printf("adjust timer once\n");
+    printf("Ginko::AdjustTimer()\n");
 }
 
 
@@ -137,22 +137,23 @@ void Ginko::DealTimer(util_timer* timer,int sockfd){
     timer->cb_func(&UsersTimerArray_[sockfd]);
     if(timer != nullptr)
         TimerList_.del_timer(timer);
-    printf("deal_timer,close fd %d\n",UsersTimerArray_[sockfd].sockfd);
+    printf("Ginko::AdjustTimer(),close fd %d\n",UsersTimerArray_[sockfd].sockfd);
 }
 
 bool Ginko::DealClientData(){
+    printf("Ginko::DealClientData()\n");
     struct sockaddr_in client_address;
     socklen_t client_addrlength = sizeof(client_address);
     while (1){
         int connfd = accept(ListenFd_, (struct sockaddr *)&client_address, &client_addrlength);
-        printf("    accept a new connection,connfd = %d\n",connfd);
+        printf("--->Ginko::DealClientData()，accept a new connection,connfd = %d\n",connfd);
         if (connfd < 0){
-            printf("errno is:%d accept error", errno);
+            printf("--->Ginko::DealClientData()，errno is:%d accept error\n", errno);
             break;
         }
         if (HttpConn::UserCount >= MAX_FD){
-            Utils_.show_error(connfd, "Internal server busy");
-            printf("Internal server busy");
+            Utils_.show_error(connfd, "--->Internal server busy\n");
+            printf("--->Internal server busy\n");
             break;
         }
         TimerInit(connfd, client_address);
@@ -161,6 +162,7 @@ bool Ginko::DealClientData(){
 }
 
 bool Ginko::DealSignal(bool& timeout, bool& stop_server){
+    printf("Ginko::DealSignal(), received signal SIGALRM\n");
     int ret = 0;
     int sig;
     char signals[1024];
@@ -176,13 +178,13 @@ bool Ginko::DealSignal(bool& timeout, bool& stop_server){
                 case SIGALRM: //14
                 {
                     timeout = true;
-                    printf("received signal SIGALRM\n");
+                    printf("--->Ginko::DealSignal(), received signal SIGALRM\n");
                     break;
                 }
                 case SIGTERM: //15
                 {
                     stop_server = true;
-                    printf("received signal SIGTERM\n");
+                    printf("--->Ginko::DealSignal(), received signal SIGTERM\n");
                     break;
                 }
             }
@@ -193,11 +195,10 @@ bool Ginko::DealSignal(bool& timeout, bool& stop_server){
 
 void Ginko::DealRead(int sockfd){
     printf("Ginko::DealRead()\n");
-
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
     if (HttpUserArray_[sockfd].Read()){
-        printf("deal with read client(%s),sockfd = %d\n", 
+        printf("--->Ginko::DealRead(), deal with read client(%s),sockfd = %d\n", 
                 inet_ntoa(HttpUserArray_[sockfd].GetAddress()->sin_addr),sockfd);
         bool ret = ThreadPool_->append(HttpUserArray_ + sockfd);
         assert(ret == true);
@@ -209,12 +210,12 @@ void Ginko::DealRead(int sockfd){
 
 
 void Ginko::DealWrite(int sockfd){
-    printf("Ginko::DealWrite()=======\n");
+    printf("Ginko::DealWrite()\n");
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
     if (HttpUserArray_[sockfd].Write())
     {
-        printf("deal with write client(%s),sockfd = %d\n", 
+        printf("--->Ginko::DealWrite(), deal with write client(%s),sockfd = %d\n", 
                 inet_ntoa(HttpUserArray_[sockfd].GetAddress()->sin_addr),sockfd);
         if(timer) AdjustTimer(timer);
     }else {
@@ -229,9 +230,9 @@ void Ginko::EventLoop(){
 
     while (!stop_server){
         int number = epoll_wait(EpollFd_, EventsArray_, MAX_EVENT_NUMBER, -1);
-        printf("in eventLoop,call epoll_wait,number = %d\n",number);
+        printf("--->Ginko::EventLoop(), epoll_wait,number = %d\n",number);
         if (number < 0 && errno != EINTR){
-            printf("epoll failure");
+            printf("--->epoll failure\n");
             break;
         }
         for(int i = 0; i < number; i++){
@@ -253,7 +254,7 @@ void Ginko::EventLoop(){
         }
         if(timeout){
             Utils_.timer_handler();
-            printf("timer tick\n");
+            printf("--->Ginko::EventLoop(), timer tick\n");
             timeout = false;
         }
     }

@@ -1,11 +1,11 @@
 #include "sql.h"
-
-#define DEBUG
+#include "../log/log.h"
 
 
 SqlPool::SqlPool():
     CurConn_(0),
-    FreeConn_(0)
+    FreeConn_(0),
+    m_close_log(0)
 {
     
 }
@@ -22,9 +22,15 @@ void SqlPool::init(string url,int port,string user,
     {
         MYSQL* con = nullptr;
         con = mysql_init(con);
+        if(con == nullptr) 
+            LOG_ERROR("MySQL Error");
         assert(con != nullptr);
+
         con = mysql_real_connect(con, Url_.c_str(), User_.c_str(), 
                 Passwd_.c_str(),DBName_.c_str(), Port_, NULL, 0);
+                
+        if(con == nullptr) 
+            LOG_ERROR("MySQL Error");
         assert(con != nullptr);
         ConnList_.push_back(con);
         FreeConn_++;

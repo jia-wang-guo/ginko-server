@@ -34,6 +34,7 @@ void Response::ResponseInit(){
 }
 
 void Response::Unmap(){
+    printf("Response::Unmap()\n");
     if (FileAddress_)
     {
         munmap(FileAddress_, FileStat_.st_size);
@@ -42,6 +43,7 @@ void Response::Unmap(){
 
 }
 bool Response::AddResponse_(const char* format,...){
+    printf("--->Response::AddResponse_()\n");
     if (WriteIndex_ >= WRITE_BUFFER_SIZE)
         return false;
     va_list arg_list;
@@ -54,12 +56,13 @@ bool Response::AddResponse_(const char* format,...){
     }
     WriteIndex_ += len;
     va_end(arg_list);
-
-    printf("request:%s\n", WriteBuf_);
+    LOG_INFO("request:%s", WriteBuf_);
+    printf("--->--->Response::AddResponse_(),request:%s\n", WriteBuf_);
     return true;
 }
 
 bool Response::AddStatusLine_(int status, const char* title){
+    printf("Response::AddStatusLine_()\n");
     return AddResponse_("%s %d %s\r\n", "Response/1.1", status, title);
 }
 // AddHeaders()
@@ -67,33 +70,39 @@ bool Response::AddStatusLine_(int status, const char* title){
 //     └───AddLinger()
 //     └───AddBlankLine()
 bool Response::AddHeaders_(int content_length){
+    printf("Response::AddHeaders_()\n");
     return AddContentLength_(content_length)
            && AddLinger_()
            && AddBlankLine_();
 }
 bool Response::AddContentLength_(int content_length){
+    printf("Response::AddContentLength_()\n");
     return AddResponse_("Content-Length:%d\r\n", content_length);
 }
 
 bool Response::AddLinger_(){
+    printf("Response::AddLinger_()\n");
     return AddResponse_("Connection:%s\r\n", 
             (Linger_ == true) ? "keep-alive" : "close");
 }
 bool Response::AddBlankLine_(){
+    printf("Response::AddBlankLine_()\n");
     return AddResponse_("%s", "\r\n");
 }
 
 
 bool Response::AddContentType_(){
+    printf("Response::AddContentType_()\n");
     return AddResponse_("Content-Type:%s\r\n", "text/html");
 }
 
 bool Response::AddContent_(const char* content){
+    printf("Response::AddContent_()\n");
     return AddResponse_("%s", content);
 }
 
 bool Response::ProcessResponse(int response){
-    printf("Response::ProcessWrite()\n");
+    printf("Response::ProcessResponse()\n");
     if (response == 500){
         printf("------->INTERNAL_ERROR\n");
         AddStatusLine_(500, error_500_title);

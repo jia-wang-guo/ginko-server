@@ -53,6 +53,7 @@ void HttpConn::Init(
         std::string passwd, 
         std::string sqlname)
 {
+    printf("HttpConn::Init()\n");
     SockFd_ = sockfd;
     Address_ = addr;
     addfd(EpollFd, SockFd_, true);
@@ -63,17 +64,19 @@ void HttpConn::Init(
     strcpy(SqlName_, sqlname.c_str());
     Request_ = new Request;
     Response_ = new Response;
+    memset(Request_->ReadBuf,'\0',2048);
+    memset(Response_->WriteBuf_,'\0',2048);
 }
  // 待定义
  void HttpConn::Init_(){
-
+    printf("HttpConn::Init_()");
  }
 
 
 // 主线程调用Read()和Write()用来处理IO
 // 工作线程调用Process()用来处理业务逻辑
 bool HttpConn::Read(){
-    printf("--->HttpConn::Read()\n");
+    printf("HttpConn::Read()\n");
     if (Request_->ReadIndex >= 2048){
         return false;
     }
@@ -89,12 +92,11 @@ bool HttpConn::Read(){
         }
         Request_->ReadIndex += bytes_read;
     }
-    cout << "bytes_read = " << bytes_read << " ReadBuf = " <<  Request_->ReadBuf << endl;
     return true;
 }
 
 bool HttpConn::Write(){
-    printf("---> Http::Write()\n");
+    printf("HttpConn::Write()\n");
     int temp = 0;
     // send all
     if (Response_->BytesToSend_ == 0){
@@ -137,7 +139,7 @@ bool HttpConn::Write(){
 }
 
 void HttpConn::Process(){
-    printf("---> Http::Process()\n");
+    printf("HttpConn::Process()\n");
     int read_ret = Request_->ProcessRequest();
     if (read_ret == 100){
         modfd(EpollFd, SockFd_, EPOLLIN);
@@ -151,8 +153,9 @@ void HttpConn::Process(){
 }
 
 void HttpConn::CloseConn(bool real_close){
+    printf("HttpConn::CloseConn()\n");
     if(real_close && (SockFd_ != -1)){
-        printf("close fd %d\n", SockFd_);
+         printf("--->HttpConn::CloseConn(), close %d\n", SockFd_);
         removefd(EpollFd, SockFd_);
         SockFd_ = -1;
         UserCount --;
@@ -165,11 +168,12 @@ sockaddr_in* HttpConn::GetAddress() {
 }
 
 void  HttpConn::CreateSqlCache(SqlPool* connPool){
+    printf("HttpConn::CreateSqlCache()\n");
     MYSQL* mysql = nullptr;
     SqlRAII mysqlconn(&mysql,connPool);
     if (mysql_query(mysql, "SELECT username,passwd FROM user"))
     {
-        printf("SELECT error:%s\n", mysql_error(mysql));
+        LOG_ERROR("SELECT error:%s\n", mysql_error(mysql));
     }
     MYSQL_RES *result = mysql_store_result(mysql);
     int num_fields = mysql_num_fields(result);
