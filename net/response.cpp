@@ -30,76 +30,14 @@ const char *error_503_form = "There was an unusual problem serving the request f
 
 
 void Response::ResponseInit(){
+    WriteIndex_ = 0;
 
 }
 
-void Response::Unmap(){
-    printf("Response::Unmap()\n");
-    if (FileAddress_)
-    {
-        munmap(FileAddress_, FileStat_.st_size);
-        FileAddress_ = 0;
-    }
-
-}
-bool Response::AddResponse_(const char* format,...){
-    printf("--->Response::AddResponse_()\n");
-    if (WriteIndex_ >= WRITE_BUFFER_SIZE)
-        return false;
-    va_list arg_list;
-    va_start(arg_list, format);
-    int len = vsnprintf(WriteBuf_ + WriteIndex_, WRITE_BUFFER_SIZE - 1 - WriteIndex_, format, arg_list);
-    if (len >= (WRITE_BUFFER_SIZE - 1 - WriteIndex_))
-    {
-        va_end(arg_list);
-        return false;
-    }
-    WriteIndex_ += len;
-    va_end(arg_list);
-    LOG_INFO("request:%s", WriteBuf_);
-    printf("--->--->Response::AddResponse_(),request:%s\n", WriteBuf_);
-    return true;
+int  Response::MapFile(char num, string url){
+    
 }
 
-bool Response::AddStatusLine_(int status, const char* title){
-    printf("Response::AddStatusLine_()\n");
-    return AddResponse_("%s %d %s\r\n", "Response/1.1", status, title);
-}
-// AddHeaders()
-//     └───AddContentLength()
-//     └───AddLinger()
-//     └───AddBlankLine()
-bool Response::AddHeaders_(int content_length){
-    printf("Response::AddHeaders_()\n");
-    return AddContentLength_(content_length)
-           && AddLinger_()
-           && AddBlankLine_();
-}
-bool Response::AddContentLength_(int content_length){
-    printf("Response::AddContentLength_()\n");
-    return AddResponse_("Content-Length:%d\r\n", content_length);
-}
-
-bool Response::AddLinger_(){
-    printf("Response::AddLinger_()\n");
-    return AddResponse_("Connection:%s\r\n", 
-            (Linger_ == true) ? "keep-alive" : "close");
-}
-bool Response::AddBlankLine_(){
-    printf("Response::AddBlankLine_()\n");
-    return AddResponse_("%s", "\r\n");
-}
-
-
-bool Response::AddContentType_(){
-    printf("Response::AddContentType_()\n");
-    return AddResponse_("Content-Type:%s\r\n", "text/html");
-}
-
-bool Response::AddContent_(const char* content){
-    printf("Response::AddContent_()\n");
-    return AddResponse_("%s", content);
-}
 
 bool Response::ProcessResponse(int response){
     printf("Response::ProcessResponse()\n");
@@ -149,3 +87,73 @@ bool Response::ProcessResponse(int response){
     BytesToSend_ = WriteIndex_;
     return true;
  }
+
+
+void Response::Unmap(){
+    printf("Response::Unmap()\n");
+    if (FileAddress_)
+    {
+        munmap(FileAddress_, FileStat_.st_size);
+        FileAddress_ = 0;
+    }
+
+}
+bool Response::AddResponse_(const char* format,...){
+    printf("--->Response::AddResponse_()\n");
+    if (WriteIndex_ >= WRITE_BUFFER_SIZE)
+        return false;
+    va_list arg_list;
+    va_start(arg_list, format);
+    int len = vsnprintf(WriteBuf_ + WriteIndex_, WRITE_BUFFER_SIZE - 1 - WriteIndex_, format, arg_list);
+    if (len >= (WRITE_BUFFER_SIZE - 1 - WriteIndex_))
+    {
+        va_end(arg_list);
+        return false;
+    }
+    WriteIndex_ += len;
+    va_end(arg_list);
+    LOG_INFO("request:%s", WriteBuf_);
+    printf("--->--->Response::AddResponse_(),request:%s\n", WriteBuf_);
+    return true;
+}
+
+bool Response::AddStatusLine_(int status, const char* title){
+    printf("Response::AddStatusLine_()\n");
+    return AddResponse_("%s %d %s\r\n", "HTTP/1.1", status, title);
+}
+// AddHeaders()
+//     └───AddContentLength()
+//     └───AddLinger()
+//     └───AddBlankLine()
+bool Response::AddHeaders_(int content_length){
+    printf("Response::AddHeaders_()\n");
+    return AddContentLength_(content_length)
+           && AddLinger_()
+           && AddBlankLine_();
+}
+bool Response::AddContentLength_(int content_length){
+    printf("Response::AddContentLength_()\n");
+    return AddResponse_("Content-Length:%d\r\n", content_length);
+}
+
+bool Response::AddLinger_(){
+    printf("Response::AddLinger_()\n");
+    return AddResponse_("Connection:%s\r\n", 
+            (Linger_ == true) ? "keep-alive" : "close");
+}
+bool Response::AddBlankLine_(){
+    printf("Response::AddBlankLine_()\n");
+    return AddResponse_("%s", "\r\n");
+}
+
+
+bool Response::AddContentType_(){
+    printf("Response::AddContentType_()\n");
+    return AddResponse_("Content-Type:%s\r\n", "text/html");
+}
+
+bool Response::AddContent_(const char* content){
+    printf("Response::AddContent_()\n");
+    return AddResponse_("%s", content);
+}
+

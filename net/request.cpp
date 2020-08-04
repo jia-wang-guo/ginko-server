@@ -1,8 +1,12 @@
 #include "request.h"
 
+void Request::RequestInit(){
+    memset(RealFile_, '\0', 2048);
+}
+
 
 Request::LINE_STATUS Request::ReadLine_(){
-    cout << "---> Request::ParseLine()\n" << endl;
+    cout << "---> Request::ParseLine_()" << endl;
     char temp;
     for (; CheckedIndex_ < ReadIndex; ++CheckedIndex_)
     {
@@ -35,16 +39,20 @@ Request::LINE_STATUS Request::ReadLine_(){
 }
 
 char* Request::GetLine_(){
-    cout << "---> Request::GetLine()\n" <<endl;
+    cout << "---> Request::GetLine()" <<endl;
     return ReadBuf + StartLine_;
 }
 
 int Request::ParseRequestLine_(std::string &line){
-    printf("---> Request::ParseRequestLine()\n");
-    regex patten("^([^ ]*) ([^ ]*) Request/([^ ]*)$");
+    cout << "---> Request::ParseRequestLine()" << endl;
+    cout << "   ---> line = " << line << "size = "<< line.size() << endl;
+
+    regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
     smatch subMatch;
     string method, path, version;
-    if(regex_match(line, subMatch, patten)) {   
+    assert(regex_match(line, subMatch, patten));
+    if(regex_match(line, subMatch, patten)) {
+        cout << "   --->begin regex" <<endl;  
         method = subMatch[1];
         path = subMatch[2];
         version = subMatch[3];
@@ -64,13 +72,14 @@ int Request::ParseRequestLine_(std::string &line){
             strcpy(Url_, "/index.html");
         }
         CheckState_ = HEADER;
+        cout << "Request::ParseRequestLine_(),CheckState_:REQUESTLINE->HEADER" << endl;
         return 100;
     }
     return 100;
 }
 
 int Request::ParseHeader_(char* text){
-    printf("Request::ParseHeader()\n");
+    cout << "Request::ParseHeader()" << endl;
     if (text[0] == '\0'){
         if (ContentLength_ != 0){
             CheckState_ = CONTENT;
@@ -92,13 +101,13 @@ int Request::ParseHeader_(char* text){
         text += strspn(text, " \t");
         Host_ = text;
     } else {
-        printf("oop!unknow header: %s\n", text);
+        cout << "oop!unknow header:" << text << endl;
     }
     return 100;
 }
 // 只有POST请求会用到
 int Request::ParseContent_(char* text){
-    printf("Request::ParseContent()\n");
+    cout << "Request::ParseContent()" << endl;
     if (ReadIndex >= (ContentLength_ + CheckedIndex_)){
         text[ContentLength_] = '\0';
         //POST请求中最后为输入的用户名和密码
@@ -109,7 +118,7 @@ int Request::ParseContent_(char* text){
 }
 
 int Request::ProcessRequest(){
-    printf("---> Request::ProcessRead()\n");
+    cout << "---> Request::ProcessRead()" << endl;
     LINE_STATUS line_status = LINE_OK;
     int ret = 100;
     char *text = 0;
@@ -159,6 +168,9 @@ int Request::ProcessRequest(){
 
 
 int Request::FinishParse_(){
+    cout << "Request::FinishParse_" << endl;
+    cout << "RealFile_ : " << RealFile_ << endl;
+    cout << "DocRoot_ : " << DocRoot_ << endl;
     strcpy(RealFile_, DocRoot_);
     int len = strlen(DocRoot_);
     // 找到最后一个的 / 的位置
@@ -266,7 +278,11 @@ int Request::FinishParse_(){
 
     int fd = open(RealFile_, O_RDONLY);
     FileAddress = (char *)mmap(0, FileStat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    printf("m_file_address:%s\n",FileAddress);//打印m_file_address
+    cout << "m_file_address:%s\n" << FileAddress << endl;//打印m_file_address
     close(fd);
     return 408;//FILE_REQUEST
 }
+
+
+
+

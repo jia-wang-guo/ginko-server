@@ -16,7 +16,7 @@ public:
     void ResponseInit();
     void Unmap();
 private:
-
+    int  MapFile(char num, string url);
     bool AddResponse_(const char* format,...);
     bool AddContent_(const char* content);
     bool AddStatusLine_(int status, const char* title);
@@ -46,6 +46,13 @@ public:
     int m_close_log;
 
     
+    // 要从httpconn传进来 
+    unordered_map<string,string>* Users;
+    MYSQL* HttpRequestMysql;
+    struct stat FileStat;
+    char* FileAddress;
+
+
 };
 
 #endif // !

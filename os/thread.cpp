@@ -28,7 +28,7 @@ ThreadPool::~ThreadPool(){
 }
 
 bool ThreadPool::append(HttpConn *request){
-    printf("---> ThreadPool::append()\n");
+    printf("ThreadPool::append()\n");
     QueueLocker_.lock();
     if(RequestWorkQueue_.size() >= MaxHttpRequests_){
         QueueLocker_.unlock();
@@ -36,6 +36,7 @@ bool ThreadPool::append(HttpConn *request){
     }
     RequestWorkQueue_.push_back(request);
     QueueLocker_.unlock();
+    printf("--->ThreadPool::append(), 工作队列P操作\n");
     Queuestat_.post();
     return true;
 }
@@ -45,6 +46,7 @@ bool ThreadPool::append(HttpConn *request){
 // 静态函数work是每个线程的入口函数
 // 在work里面通过对象使用类的动态方法run     
 void* ThreadPool::worker(void *arg){
+    printf("ThreadPool::worker()\n");
     // current thread
     ThreadPool* pool = (ThreadPool*) arg;
     pool->run();
@@ -52,8 +54,10 @@ void* ThreadPool::worker(void *arg){
 }
 
 void ThreadPool::run(){
+    printf("ThreadPool::run()\n");
     // 每个线程的死循环
     while(1){
+        printf("--->ThreadPool::run(),工作队列V操作\n");
         Queuestat_.wait();
         QueueLocker_.lock();
         if(RequestWorkQueue_.empty()){

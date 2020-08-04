@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include <regex>
+#include <cassert>
 #include <cstdio>
 #include <sys/stat.h> 
 #include <sys/uio.h> 
@@ -52,7 +53,7 @@ public:
     };
 
 public:
-    void        Init(const char* buf);
+    void        RequestInit();
     int         ProcessRequest();
 private:
     LINE_STATUS ReadLine_();
@@ -64,14 +65,11 @@ private:
 
 
 public:
-    // 要从httpconn传进来 
-    unordered_map<string,string>* Users;
-    MYSQL* HttpRequestMysql;
-    struct stat FileStat;
-    char* FileAddress;
+
     char ReadBuf[2048];
     int ReadIndex;
     int m_close_log;
+
 private:  
     int CheckedIndex_;  
     int StartLine_;

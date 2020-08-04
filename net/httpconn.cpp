@@ -58,14 +58,15 @@ void HttpConn::Init(
     Address_ = addr;
     addfd(EpollFd, SockFd_, true);
     UserCount ++;
-    DocRoot_ = root;
     strcpy(SqlUser_, user.c_str());
     strcpy(SqlPasswd_, passwd.c_str());
     strcpy(SqlName_, sqlname.c_str());
     Request_ = new Request;
     Response_ = new Response;
-    memset(Request_->ReadBuf,'\0',2048);
-    memset(Response_->WriteBuf_,'\0',2048);
+    //memset(Request_->ReadBuf,'\0',2048);
+    //memset(Response_->WriteBuf_,'\0',2048);
+    Request_->RequestInit();
+    Response_->DocRoot_ = root;
 }
  // 待定义
  void HttpConn::Init_(){
@@ -82,6 +83,7 @@ bool HttpConn::Read(){
     }
     int bytes_read = 0;
     while (true){
+        memset(Request_->ReadBuf + Request_->ReadIndex,'\0',2048 - Request_->ReadIndex); 
         bytes_read = recv(SockFd_, Request_->ReadBuf + Request_->ReadIndex, 
                              2048 - Request_->ReadIndex, 0);
         if (bytes_read == -1){
