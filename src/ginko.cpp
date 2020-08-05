@@ -1,7 +1,7 @@
 #include "ginko.h"
 
 Ginko::Ginko(){
-    HttpUserArray_ = new HttpConn[MAX_FD];
+    HttpUserArray_ = new Http[MAX_FD];
   
     // root dir
     char serverPath[200];
@@ -26,7 +26,7 @@ Ginko::~Ginko(){
     free(Root_);
 }
 
-void Ginko::init(
+void Ginko::Init(
     int port, 
     string user, 
     string passwd, 
@@ -47,7 +47,7 @@ void Ginko::init(
 
 
 void Ginko::SqlPoolInit(){
-     cout << "Ginko::SqlPoolInit()" << endl;
+    cout << "Ginko::SqlPoolInit()" << endl;
     ConnPool_ = SqlPool::GetInstance();
     ConnPool_->init("localhost",3306, SqlUser_, SqlPasswd_, SqlName_,SqlNum_);
     HttpUserArray_->CreateSqlCache(ConnPool_);
@@ -95,7 +95,7 @@ void Ginko::EventListen(){
     EpollFd_ = epoll_create(5);
     assert(EpollFd_ != -1);
     Utils_.addfd(EpollFd_, ListenFd_, false);
-    HttpConn::EpollFd = EpollFd_;
+    Http::EpollFd = EpollFd_;
 
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, Pipefd_);
     assert(ret != -1);
@@ -151,7 +151,7 @@ bool Ginko::DealClientData(){
             printf("--->Ginko::DealClientData()，errno is:%d accept error\n", errno);
             break;
         }
-        if (HttpConn::UserCount >= MAX_FD){
+        if (Http::UserCount >= MAX_FD){
             Utils_.show_error(connfd, "--->Internal server busy\n");
             printf("--->Internal server busy\n");
             break;

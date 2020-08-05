@@ -24,7 +24,7 @@ int main()
 
 
     Ginko ginko;
-    ginko.init(8001, "root", "xc242000", "jiawangdb",1,8,8);
+    ginko.Init(8001, "root", "xc242000", "jiawangdb",1,8,8);
     ginko.SqlPoolInit();
     ginko.ThreadPoolInit();
     ginko.EventListen();

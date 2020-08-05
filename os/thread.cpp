@@ -27,7 +27,7 @@ ThreadPool::~ThreadPool(){
     delete[] ThreadsArray_;
 }
 
-bool ThreadPool::append(HttpConn *request){
+bool ThreadPool::append(Http *request){
     printf("ThreadPool::append()\n");
     QueueLocker_.lock();
     if(RequestWorkQueue_.size() >= MaxHttpRequests_){
@@ -65,7 +65,7 @@ void ThreadPool::run(){
             continue;
         }
         // 线程每次从http请求队列队头取请求
-        HttpConn* request = RequestWorkQueue_.front();
+        Http* request = RequestWorkQueue_.front();
         RequestWorkQueue_.pop_front();
         QueueLocker_.unlock();
         if(request == nullptr)

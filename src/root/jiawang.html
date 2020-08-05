@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>欢迎来到 Ginko Server(开发中...)</title>
+        <style>
+            img {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 5px;
+            }
+        </style>
+    </head>
+    <h1>About Ginko</h1>
+        <h2>〇、网站测试</h2>
+        <img src="/img/ginko1.jpg" alt="Paris" width="400" height="300" >
+        <a href="https://www.baidu.com">百度</a>
+        <h2>一、原理介绍</h2>
+        <img src="/img/ginko_logo.png" alt="Paris" width="400" height="300" >
+        <h3>1、proactor模型介绍</h3>
+        <p>在高性能的I/O设计中，有两个比较著名的模式Reactor和Proactor模式，其中Reactor模式用于同步I/O，而Proactor运用于异步I/O操作。</p>
+        <p>在比较这两个模式之前，我们首先的搞明白几个概念，什么是阻塞和非阻塞，什么是同步和异步,同步和异步是针对应用程序和内核的交互而言的，</br>
+            同步指的是用户进程触发IO操作并等待或者轮询的去查看IO操作是否就绪，而异步是指用户进程触发IO操作以后便开始做自己的事情，而当IO操 </br>
+            作已经完成的时候会得到IO完成的通知（异步的特点就是通知）。而阻塞和非阻塞是针对于进程在访问数据的时候，根据IO操作的就绪状态来采 </br>
+            取的不同方式，说白了是一种读取或者写入操作函数的实现方式，阻塞方式下读取或者写入函数将一直等待，而非阻塞方式下，读取或者写入函数 </br>
+            会立即返回一个状态值。</p>
+        <p>&nbsp;</p>
+        <h2>二、技术难点</h2>
+        <img src="/img/ginko2.jpg" alt="Paris" width="400" height="300" >
+        <h2>三、server研究</h2>
+        <img src="/img/ginko3.jpg" alt="Paris" width="400" height="300" >
+        <h2>四、CPP探索</h2>
+        <img src="/img/ginko4.jpg" alt="Paris" width="400" height="300" >
+     
+        <h3>new和malloc的区别</h3>
+        <p>new和malloc的区别可以从以下几方面进行阐述:</p>
+        <ul>
+        <li>最大的区别：new在申请空间的时候会调用构造函数，malloc不会调用</li>
+        <li>申请失败返回：new在申请空间失败后返回的bad_alloc(异常)，malloc在申请空间失败后会返回NULL</li>
+        <li>属性上：new/delete是C++关键字需要编译器支持，maollc是库函数，需要添加头文件</li>
+        <li>参数：new在申请内存分配时不需要指定内存块大小，编译器会更具类型计算出大小，malloc需要显示的指定所需内存的大小</li>
+        <li>成功返回类型：new操作符申请内存成功时，返回的是对象类型的指针，类型严格与对象匹配，无需进行类型转换，因此new是类型安全性操作符。malloc申请内存成功则返回void*，需要强制类型转换为我们所需的类型</li>
+        <li>自定义类型：new会先调operator new函数，申请足够的内存（底层也是malloc实现），然后调用类的构造函数，初始化成员变量，最后返回自定义类型指针。delete先调用析构函数，然后调用operator delete函数来释放内存（底层是通过free实现）。malloc/free是库函数，只能动态的申请和释放内存，无法强制要求其做自定义类型对象构造和析构函数</li>
+        <li>重载：C++允许重载new/delete操作符(?????好像不对，operator new和operator delete才可以重载)，特别的，布局new的就不需要为对象分配内存，而是指定了一个地址作为内存起始区域，new在这段内存上为对象调用构造函数完成初始化工作，并返回地址。malloc不允许重载。</li>
+        
+        </ul>
+        <p>原文链接：<a href='https://blog.csdn.net/nie19940803/article/details/76358673?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase' target='_blank' class='url'>https://blog.csdn.net/nie19940803/article/details/76358673?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase</a></p>
+        
+
+
+    <p>&nbsp;</p>
+</html>

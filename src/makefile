@@ -11,9 +11,7 @@ all:ginko
 ginko:main.cpp ginko.cpp \
         ../os/thread.cpp \
 		../os/timer.cpp  \
-		../net/httpconn.cpp \
-		../net/request.cpp \
-		../net/response.cpp  \
+		../net/http.cpp \
 		../log/log.cpp   \
 		../db/sql.cpp   
 	$(CXX) $(CXXFLAGS) $^ -o $@  -lpthread -lmysqlclient

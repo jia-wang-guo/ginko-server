@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "../net/httpconn.h"
+#include "../net/http.h"
 #include "../os/thread.h"
 #include "../os/timer.h"
 
@@ -29,7 +29,7 @@ class Ginko
 public:
     Ginko();
     ~Ginko();
-    void init(int port, string user, string passwd, string databaseName,
+    void Init(int port, string user, string passwd, string databaseName,
             int opt_linger, int sql_num, int thread_num);
     void SqlPoolInit();
     void ThreadPoolInit();
@@ -49,7 +49,7 @@ public:
     char* Root_;
     
     int Pipefd_[2];
-    HttpConn* HttpUserArray_;
+    Http* HttpUserArray_;
 
     // db
     SqlPool* ConnPool_;
