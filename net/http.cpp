@@ -446,6 +446,7 @@ int Http::FinishParse_(){
         free(m_url_real);
     }else
         strncpy(RealFile_ + len, Url_, REALFILE_LEN - len - 1);
+        printf("not number RealFile_ : %s\n", RealFile_);
 
     if (stat(RealFile_, &FileStat_) < 0)
         return 404;// 后面要改成404

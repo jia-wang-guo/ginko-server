@@ -144,20 +144,35 @@ bool Ginko::DealClientData(){
     printf("Ginko::DealClientData()\n");
     struct sockaddr_in client_address;
     socklen_t client_addrlength = sizeof(client_address);
-    while (1){
-        int connfd = accept(ListenFd_, (struct sockaddr *)&client_address, &client_addrlength);
-        printf("--->Ginko::DealClientData()，accept a new connection,connfd = %d\n",connfd);
-        if (connfd < 0){
-            printf("--->Ginko::DealClientData()，errno is:%d accept error\n", errno);
-            break;
-        }
-        if (Http::UserCount >= MAX_FD){
-            Utils_.show_error(connfd, "--->Internal server busy\n");
-            printf("--->Internal server busy\n");
-            break;
-        }
-        TimerInit(connfd, client_address);
+    // while (1){
+    //     int connfd = accept(ListenFd_, (struct sockaddr *)&client_address, &client_addrlength);
+    //     printf("--->Ginko::DealClientData()，accept a new connection,connfd = %d\n",connfd);
+    //     if (connfd < 0){
+    //         printf("--->Ginko::DealClientData()，errno is:%d accept error\n", errno);
+    //         break;
+    //     }
+    //     if (Http::UserCount >= MAX_FD){
+    //         Utils_.show_error(connfd, "--->Internal server busy\n");
+    //         printf("--->Internal server busy\n");
+    //         break;
+    //     }
+    //     TimerInit(connfd, client_address);
+    // }
+
+    int connfd = accept(ListenFd_, (struct sockaddr *)&client_address, &client_addrlength);
+    printf("    accept a new connection,connfd = %d\n",connfd);
+    if (connfd < 0)
+    {
+        printf("errno is:%d accept error\n", errno);
+        return false;
     }
+    if (Http::UserCount >= MAX_FD)
+    {
+        Utils_.show_error(connfd, "Internal server busy");
+        printf("Internal server busy\n");
+        return false;
+    }
+    TimerInit(connfd, client_address);
     return false;
 }
 

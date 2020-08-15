@@ -1,0 +1,13 @@
+{
+    "threadpool":{
+        "port" : 8001,
+        "threadnum" : 8
+    },
+
+    "database":{
+        "username": "root",
+        "password": "xc242000",
+        "dbname":   "jiawangdb",
+        "sqlnum" :  8
+    }
+}

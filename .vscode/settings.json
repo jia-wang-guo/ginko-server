@@ -69,6 +69,7 @@
         "unordered_set": "cpp",
         "regex": "cpp",
         "shared_mutex": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "cerrno": "c"
     }
 }
