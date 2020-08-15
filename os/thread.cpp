@@ -36,7 +36,7 @@ bool ThreadPool::append(Http *request){
     }
     RequestWorkQueue_.push_back(request);
     QueueLocker_.unlock();
-    printf("--->ThreadPool::append(), 工作队列P操作\n");
+    printf("--->ThreadPool::append(), 工作队列V操作\n");
     Queuestat_.post();
     return true;
 }
@@ -57,7 +57,7 @@ void ThreadPool::run(){
     printf("ThreadPool::run()\n");
     // 每个线程的死循环
     while(1){
-        printf("--->ThreadPool::run(),工作队列V操作\n");
+        printf("--->ThreadPool::run(),工作队列P操作\n");
         Queuestat_.wait();
         QueueLocker_.lock();
         if(RequestWorkQueue_.empty()){
