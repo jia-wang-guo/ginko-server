@@ -50,7 +50,7 @@ void Ginko::SqlPoolInit(){
     cout << "Ginko::SqlPoolInit()" << endl;
     ConnPool_ = SqlPool::GetInstance();
     ConnPool_->init("localhost",3306, SqlUser_, SqlPasswd_, SqlName_,SqlNum_);
-    HttpUserArray_->CreateSqlCache(ConnPool_);
+    HttpUserArray_->initmysql_result(ConnPool_);
 }
 
 
@@ -64,7 +64,7 @@ void Ginko::EventListen(){
     cout << "Ginko::EventListen()" << endl;
     ListenFd_  = socket(PF_INET, SOCK_STREAM, 0);
     assert(ListenFd_ >= 0);
-
+    // SO_LINGER 延时关闭，优雅关闭
     if(OptLinger_ == 0){
         struct linger temp = {0,1};
         setsockopt(ListenFd_, SOL_SOCKET, SO_LINGER, &temp, sizeof(temp));
@@ -81,6 +81,7 @@ void Ginko::EventListen(){
     address.sin_port = htons(Port_);
 
     int flag = 1;
+    // SO_REUSEADDR
     setsockopt(ListenFd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     ret = bind(ListenFd_, (struct sockaddr*)&address, sizeof(address));
     assert(ret >= 0);
@@ -95,7 +96,7 @@ void Ginko::EventListen(){
     EpollFd_ = epoll_create(5);
     assert(EpollFd_ != -1);
     Utils_.addfd(EpollFd_, ListenFd_, false);
-    Http::EpollFd = EpollFd_;
+    Http::m_epollfd = EpollFd_;
 
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, Pipefd_);
     assert(ret != -1);
@@ -111,7 +112,8 @@ void Ginko::EventListen(){
 
 
 void Ginko::TimerInit(int connfd, struct sockaddr_in client_address){
-    HttpUserArray_[connfd].Init(connfd, client_address, Root_, SqlUser_, SqlPasswd_, SqlName_);
+    // init需要完善一下
+    HttpUserArray_[connfd].init(connfd, client_address, Root_, 0, 0, 0, SqlUser_, SqlPasswd_, SqlName_);
     UsersTimerArray_[connfd].address = client_address;
     UsersTimerArray_[connfd].sockfd = connfd;
     // a new util_timer
@@ -166,7 +168,7 @@ bool Ginko::DealClientData(){
         printf("errno is:%d accept error\n", errno);
         return false;
     }
-    if (Http::UserCount >= MAX_FD)
+    if (Http::m_user_count >= MAX_FD)
     {
         Utils_.show_error(connfd, "Internal server busy");
         printf("Internal server busy\n");
@@ -212,9 +214,9 @@ void Ginko::DealRead(int sockfd){
     printf("Ginko::DealRead()\n");
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
-    if (HttpUserArray_[sockfd].Read()){
+    if (HttpUserArray_[sockfd].read_once()){
         printf("--->Ginko::DealRead(), deal with read client(%s),sockfd = %d\n", 
-                inet_ntoa(HttpUserArray_[sockfd].GetAddress()->sin_addr),sockfd);
+                inet_ntoa(HttpUserArray_[sockfd].get_address()->sin_addr),sockfd);
         bool ret = ThreadPool_->append(HttpUserArray_ + sockfd);
         assert(ret == true);
         if(timer)  AdjustTimer(timer);
@@ -228,10 +230,10 @@ void Ginko::DealWrite(int sockfd){
     printf("Ginko::DealWrite()\n");
     util_timer *timer = UsersTimerArray_[sockfd].timer;
     //proactor
-    if (HttpUserArray_[sockfd].Write())
+    if (HttpUserArray_[sockfd].write())
     {
         printf("--->Ginko::DealWrite(), deal with write client(%s),sockfd = %d\n", 
-                inet_ntoa(HttpUserArray_[sockfd].GetAddress()->sin_addr),sockfd);
+                inet_ntoa(HttpUserArray_[sockfd].get_address()->sin_addr),sockfd);
         if(timer) AdjustTimer(timer);
     }else {
         DealTimer(timer, sockfd);

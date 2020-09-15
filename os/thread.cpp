@@ -70,8 +70,8 @@ void ThreadPool::run(){
         QueueLocker_.unlock();
         if(request == nullptr)
             continue;
-        SqlRAII mysqlcon(&request->HttpMysql, ConnPool_);
-        request->Process();    
+        SqlRAII mysqlcon(&request->mysql, ConnPool_);
+        request->process();    
     }
 }
 

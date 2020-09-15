@@ -1,116 +1,157 @@
-#ifndef __HTTP_H__
-#define __HTTP_H__
-// linux
+#ifndef __HTTP_H
+#define __HTTP_H
 #include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h> 
-#include <sys/uio.h> 
-#include <sys/mman.h>
+#include <signal.h>
+#include <sys/types.h>
 #include <sys/epoll.h>
-#include <netinet/in.h> 
-#include <mysql/mysql.h>
-// cpp
-#include <iostream>
-#include <cstring>
-#include <string>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <assert.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <stdarg.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <sys/uio.h>
+#include <map>
 #include <regex>
-#include <cassert>
-#include <cstdio>
-#include <unordered_map>
-
-#include "../db/sql.h"
 #include "../os/locker.h"
-#include "../log/log.h"
+#include "../db/sql.h"
+#include "../os/timer.h"
 
-class Http{
-/*
-* http
-*/
+using namespace std;
+
+class Http
+{
 public:
-    static int   EpollFd;
-    static int   UserCount;
-    MYSQL*       HttpMysql;
-    int          m_close_log;
-public:
-    // 以下设置为公有的函数时提供给服务器的接口,配合私有的请求结
-    // Init(),CloseConn(),Process(),Read(),Write(),GetAddress(),CreateSqlCache
-    void         Init(int sockfd, const sockaddr_in &addr, char *root, 
-                 std::string user, std::string passwd, std::string sqlname);
-    void         CloseConn(bool real_close = true);
-    void         Process();    // process主要给工作线程使用
-    bool         Read();       // Read和Write主要给主线程使用
-    bool         Write();
-    sockaddr_in* GetAddress();
-    void         CreateSqlCache(SqlPool* connPool);
-private:
-    void         Init_();     // Http内部调用
-private:
-    int          SockFd_;
-    struct       sockaddr_in Address_;
-    char*        DocRoot_;
-    char         SqlUser_[100];
-    char         SqlPasswd_[100];
-    char         SqlName_[100];
-/*
-* request
-*/
-public:
-    static const int REALFILE_LEN  = 200;
+    static const int FILENAME_LEN = 200;
     static const int READ_BUFFER_SIZE = 2048;
     static const int WRITE_BUFFER_SIZE = 2048;
-    enum        METHOD { GET = 0,POST,HEAD,PUT,DELETE,TRACE,OPTIONS,CONNECT,PATH };
-    enum        CHECK_STATE{ REQUESTLINE = 0,HEADER,CONTENT,FINISH };
-    enum        LINE_STATUS{ LINE_OK = 0,LINE_BAD,LINE_OPEN };
+    enum METHOD
+    {
+        GET = 0,
+        POST,
+        HEAD,
+        PUT,
+        DELETE,
+        TRACE,
+        OPTIONS,
+        CONNECT,
+        PATH
+    };
+    enum CHECK_STATE
+    {
+        CHECK_STATE_REQUESTLINE = 0,
+        CHECK_STATE_HEADER,
+        CHECK_STATE_CONTENT
+    };
+    enum HTTP_CODE
+    {
+        NO_REQUEST,
+        GET_REQUEST,
+        BAD_REQUEST,
+        NO_RESOURCE,
+        FORBIDDEN_REQUEST,
+        FILE_REQUEST,
+        INTERNAL_ERROR,
+        CLOSED_CONNECTION
+    };
+    enum LINE_STATUS
+    {
+        LINE_OK = 0,
+        LINE_BAD,
+        LINE_OPEN
+    };
+
 public:
-    int         ProcessRequest();
-private:
-    LINE_STATUS ReadLine_();
-    char*       GetLine_();
-    int         ParseRequestLine_(std::string &line);
-    int         ParseHeader_(char* text);
-    int         ParseContent_(char* text);
-    int         FinishParse_();
-private:  
-    char        ReadBuf_[READ_BUFFER_SIZE];
-    int         ReadIndex_;
-    int         CheckedIndex_;  
-    int         StartLine_;
-    CHECK_STATE CheckState_; 
-    METHOD      Method_;   
-    char*       Url_;
-    char*       Version_;
-    char*       Host_;
-    int         ContentLength_;
-    bool        Linger_;
-    char*       BodyString_; // http请求实体的内容
-    char       RealFile_[REALFILE_LEN];  // 文件的真实路径
-/*
-* response
-*/
+    Http() {}
+    ~Http() {}
+
 public:
-    bool   ProcessResponse(int response);
-private:
-    void   Unmap_();
-    bool   AddResponse_(const char* format,...);
-    bool   AddContent_(const char* content);
-    bool   AddStatusLine_(int status, const char* title);
-    bool   AddHeaders_(int content_length);
-    bool   AddContentType_();
-    bool   AddContentLength_(int content_length);
-    bool   AddLinger_();
-    bool   AddBlankLine_();
-public:
-    char   WriteBuf_[WRITE_BUFFER_SIZE];
-    int    WriteIndex_; 
-    int    BytesToSend_;
-    int    BytesHaveSend_;
-    char*  FileAddress_;    //文件的内存地址
-    struct stat FileStat_;  
-    struct iovec Iovec_[2];
-    int    IovecCount_;
+    void init(int sockfd, const sockaddr_in &addr, char *, int, int, int, string user, string passwd, string sqlname);
+    void close_conn(bool real_close = true);
+    void process();
+    bool read_once();
+    bool write();
+    sockaddr_in *get_address()
+    {
+        return &m_address;
+    }
+    void initmysql_result(SqlPool *connPool);
+    void initresultFile(SqlPool *connPool);
+    int timer_flag;
+    int improv;
 
 
+private:
+    void init();
+    HTTP_CODE process_read();
+    bool process_write(HTTP_CODE ret);
+    HTTP_CODE parse_request_line(char *text);
+    HTTP_CODE parse_request_line_regex(char *text);
+    HTTP_CODE parse_headers(char *text);
+    HTTP_CODE parse_content(char *text);
+    HTTP_CODE do_request();
+    char *get_line() { return m_read_buf + m_start_line; };
+    LINE_STATUS parse_line();
+    void unmap();
+    bool add_response(const char *format, ...);
+    bool add_content(const char *content);
+    bool add_status_line(int status, const char *title);
+    bool add_headers(int content_length);
+    bool add_content_type();
+    bool add_content_length(int content_length);
+    bool add_linger();
+    bool add_blank_line();
+
+public:
+    static int m_epollfd;
+    static int m_user_count;
+    MYSQL *mysql;
+    int m_state;  //读为0, 写为1
+
+private:
+    int m_sockfd;
+    sockaddr_in m_address;
+    char m_read_buf[READ_BUFFER_SIZE];
+    int m_read_idx;
+    int m_checked_idx;
+    int m_start_line;
+    char m_write_buf[WRITE_BUFFER_SIZE];
+    int m_write_idx;
+    CHECK_STATE m_check_state;
+    METHOD m_method;
+    char m_real_file[FILENAME_LEN];
+    char *m_url;
+    char *m_version;
+    char *m_host;
+    int m_content_length;
+    bool m_linger;
+    //用于实现writev
+    char *m_file_address;
+    struct stat m_file_stat;//用于mmap函数
+    struct iovec m_iv[2];
+    int m_iv_count;
+    int cgi;        //是否启用的POST
+    char *m_string; //存储请求头数据
+    int bytes_to_send;
+    int bytes_have_send;
+    char *doc_root;
+
+    map<string, string> m_users;
+    int m_SQLVerify;
+    int m_TRIGMode;
+    int m_close_log;
+
+    char sql_user[100];
+    char sql_passwd[100];
+    char sql_name[100];
 };
 
-#endif 
+#endif
